@@ -1,6 +1,6 @@
 <odoo>
 
-    <!-- ===== List View (قائمتك كما هي تقريبًا) ===== -->
+    <!-- ===== List View ===== -->
     <record id="view_predictive_line_list" model="ir.ui.view">
         <field name="name">predictive.dashboard.line.list</field>
         <field name="model">predictive.dashboard.line</field>
@@ -20,17 +20,15 @@
         </field>
     </record>
 
-    <!-- ===== Graph View (Bar Chart) ===== -->
+    <!-- ===== Graph View ===== -->
     <record id="view_predictive_line_graph" model="ir.ui.view">
         <field name="name">predictive.dashboard.line.graph</field>
         <field name="model">predictive.dashboard.line</field>
         <field name="arch" type="xml">
             <graph string="Forecast by Key" type="bar">
-                <!-- المحور X -->
                 <field name="display_key" type="row"/>
-                <!-- القيم -->
                 <field name="forecast_qty" type="measure"/>
-                <!-- ممكن تضيف مقاييس أخرى:
+                <!-- يمكن إضافة مقاييس أخرى عند الحاجة:
                 <field name="daily_rate" type="measure"/>
                 <field name="stock_onhand" type="measure"/>
                 -->
@@ -38,7 +36,7 @@
         </field>
     </record>
 
-    <!-- ===== Pivot View (اختياري لكن مفيد للتحليل) ===== -->
+    <!-- ===== Pivot View ===== -->
     <record id="view_predictive_line_pivot" model="ir.ui.view">
         <field name="name">predictive.dashboard.line.pivot</field>
         <field name="model">predictive.dashboard.line</field>
@@ -53,7 +51,7 @@
         </field>
     </record>
 
-    <!-- ===== Search View (بحث وفلاتر جاهزة) ===== -->
+    <!-- ===== Search View (مع تهريب &lt;=) ===== -->
     <record id="view_predictive_line_search" model="ir.ui.view">
         <field name="name">predictive.dashboard.line.search</field>
         <field name="model">predictive.dashboard.line</field>
@@ -61,8 +59,8 @@
             <search string="Search Forecast Lines">
                 <field name="display_key" string="Key"/>
                 <field name="wizard_id"/>
-                <filter string="At Risk (<=7 days)" name="at_risk_7"
-                        domain="[('days_until_shortage','!=',0),('days_until_shortage','<=',7)]"/>
+                <filter string="At Risk (≤ 7 days)" name="at_risk_7"
+                        domain="[('days_until_shortage','&lt;=',7),('days_until_shortage','!=',0)]"/>
                 <filter string="OOS Today" name="oos_today"
                         domain="[('days_until_shortage','=',0)]"/>
                 <group expand="0" string="Group By">
@@ -73,17 +71,15 @@
         </field>
     </record>
 
-    <!-- ===== Action لفتح (Graph + List + Pivot) ===== -->
+    <!-- ===== Action & Menu ===== -->
     <record id="action_predictive_lines_graph" model="ir.actions.act_window">
         <field name="name">Forecast Graph</field>
         <field name="res_model">predictive.dashboard.line</field>
         <field name="view_mode">graph,list,pivot</field>
         <field name="search_view_id" ref="view_predictive_line_search"/>
-        <!-- ملاحظة: كون الموديل Transient، السطور تخص تشغيلات الـ Wizard الحالية -->
         <field name="context">{}</field>
     </record>
 
-    <!-- ===== Menu لفتح الـ Graph من القائمة الرئيسية ===== -->
     <menuitem id="menu_predictive_graph"
               name="Forecast Graph"
               parent="menu_predictive_root"
