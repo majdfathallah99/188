@@ -1,70 +1,68 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <data noupdate="0">
+  <template id="predictive_report_tmpl">
+    <t t-call="web.html_container">
+      <!-- ستايل مباشر لضمان تطبيق الخط و RTL في PDF -->
+      <main class="o_report_layout_standard"
+            style="
+              direction: rtl; text-align: right;
+              font-family: 'Cairo','Amiri','NotoNaskhArabic','DejaVu Sans',sans-serif;
+            ">
 
-    <template id="predictive_report_tmpl">
-      <!-- جهّز سياق التقرير -->
-      <t t-set="doc" t-value="docs and docs[0]"/>
-      <t t-set="o" t-value="doc"/>
+        <h2 style="margin:0 0 8px 0;">Predictive Forecast</h2>
 
-      <!-- غلاف HTML + عنصر main المطلوب من محوّل PDF -->
-      <t t-call="web.html_container">
-        <main class="o_report_layout_standard">
-          <div class="page">
-            <t t-if="doc">
-              <h2>Predictive Forecast</h2>
+        <div style="margin-bottom:12px;">
+          <p style="margin:0;">
+            <strong>Company:</strong>
+            <span t-esc="docs.company_id.display_name"/>
+          </p>
+          <p style="margin:0;">
+            <strong>Period:</strong>
+            <span t-esc="docs.date_from"/> إلى <span t-esc="docs.date_to"/>
+          </p>
+          <p style="margin:0;"><strong>Method:</strong> <span t-esc="docs.method"/></p>
+          <p style="margin:0;"><strong>Group by:</strong> <span t-esc="docs.group_by"/></p>
+        </div>
 
-              <p>
-                <strong>Company:</strong>
-                <span t-esc="doc.company_id.display_name"/><br/>
-                <strong>Period:</strong>
-                <span t-esc="doc.date_from"/> → <span t-esc="doc.date_to"/><br/>
-                <strong>Method:</strong>
-                <span t-esc="doc.method"/><br/>
-                <strong>Group by:</strong>
-                <span t-esc="doc.group_by"/>
-              </p>
-
-              <t t-if="doc.line_ids">
-                <table class="table table-sm o_main_table">
-                  <thead>
-                    <tr>
-                      <th>Key</th>
-                      <th>UoM</th>
-                      <th class="text-end">Qty in Window</th>
-                      <th class="text-end">Daily Rate</th>
-                      <th class="text-end">Forecast</th>
-                      <th class="text-end">On Hand</th>
-                      <th class="text-end">Days till Shortage</th>
-                      <th class="text-end">Shortage Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <t t-foreach="doc.line_ids" t-as="l">
-                      <tr>
-                        <td><span t-esc="l.display_key"/></td>
-                        <td><span t-esc="l.uom_id.display_name or ''"/></td>
-                        <td class="text-end"><span t-esc="l.qty_window"/></td>
-                        <td class="text-end"><span t-esc="('%.4f' % (l.daily_rate or 0.0))"/></td>
-                        <td class="text-end"><span t-esc="l.forecast_qty"/></td>
-                        <td class="text-end"><span t-esc="l.stock_onhand"/></td>
-                        <td class="text-end"><span t-esc="('%.2f' % (l.days_until_shortage or 0.0))"/></td>
-                        <td class="text-end"><span t-esc="l.shortage_date or ''"/></td>
-                      </tr>
-                    </t>
-                  </tbody>
-                </table>
-              </t>
-              <p t-else="">No lines to print. Use Compute first.</p>
+        <table class="o_main_table" style="width:100%; border-collapse:collapse; direction:ltr; text-align:left;">
+          <thead>
+            <tr>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px; width:36%;">Key</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">UoM</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">Qty in Window</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">Daily Rate</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">Forecast</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">On Hand</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px; white-space:nowrap;">Days till Shortage</th>
+              <th style="border-bottom:1px solid #ccc; padding:6px 8px;">Shortage Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="docs.line_ids" t-as="l">
+              <tr>
+                <!-- خليه RTL + اسم عربي صريح -->
+                <td style="padding:6px 8px; direction:rtl; unicode-bidi:isolate-override; white-space:normal;">
+                  <t t-esc="l.display_key or ''"/>
+                </td>
+                <td style="padding:6px 8px;"><t t-esc="l.uom_id.display_name or ''"/></td>
+                <td style="padding:6px 8px;"><t t-esc="'%.2f' % (l.qty_window or 0.0)"/></td>
+                <td style="padding:6px 8px;"><t t-esc="'%.4f' % (l.daily_rate or 0.0)"/></td>
+                <td style="padding:6px 8px;"><t t-esc="'%.2f' % (l.forecast_qty or 0.0)"/></td>
+                <!-- عرض المخزون بدون سالب -->
+                <td style="padding:6px 8px;"><t t-esc="'%.2f' % (max(l.stock_onhand or 0.0, 0.0))"/></td>
+                <!-- لو صفر أو سالب نعرض '—' -->
+                <td style="padding:6px 8px;">
+                  <t t-if="(l.days_until_shortage or 0.0) &gt; 0.0" t-esc="'%.0f' % l.days_until_shortage"/>
+                  <t t-else="1">—</t>
+                </td>
+                <td style="padding:6px 8px;">
+                  <t t-esc="l.shortage_date and l.shortage_date.strftime('%Y-%m-%d') or ''"/>
+                </td>
+              </tr>
             </t>
+          </tbody>
+        </table>
 
-            <t t-else="">
-              <p><em>No record found for printing.</em></p>
-            </t>
-          </div>
-        </main>
-      </t>
-    </template>
-
-  </data>
+      </main>
+    </t>
+  </template>
 </odoo>
