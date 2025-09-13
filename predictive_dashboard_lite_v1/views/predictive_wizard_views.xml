@@ -37,10 +37,13 @@
                             <field name="send_email_notifications"/>
                         </group>
                     </group>
+
                     <notebook>
-                        <page string="Forecast Lines">
-                            <field name="line_ids" nolabel="1">
-                                <tree editable="bottom">
+                        <!-- نجمع الجدول + الرسم في نفس التاب وعلى نفس الموديل (line_ids) -->
+                        <page string="Forecast">
+                            <field name="line_ids" nolabel="1" mode="tree,graph">
+                                <!-- جدول النتائج (قراءة فقط) -->
+                                <tree create="false" edit="false" delete="false" options="{'no_create': True, 'no_edit': True, 'no_delete': True}">
                                     <field name="display_key" string="Key"/>
                                     <field name="uom_id" readonly="1"/>
                                     <field name="qty_window" readonly="1"/>
@@ -51,13 +54,13 @@
                                     <field name="days_until_shortage" readonly="1" digits="[16,2]"/>
                                     <field name="shortage_date" readonly="1"/>
                                 </tree>
+
+                                <!-- الرسم البياني يعتمد حقول موديل السطور -->
+                                <graph string="Forecast by Product" type="bar" attrs="{'invisible':[('parent.group_by','!=','product')]}">
+                                    <field name="display_key" type="row"/>
+                                    <field name="forecast_qty" type="measure"/>
+                                </graph>
                             </field>
-                        </page>
-                        <page string="Graph (Products Only)" attrs="{'invisible':[('group_by','!=','product')]}">
-                            <graph string="Forecast by Product" type="bar">
-                                <field name="display_key" type="row"/>
-                                <field name="forecast_qty" type="measure"/>
-                            </graph>
                         </page>
                     </notebook>
                 </sheet>
