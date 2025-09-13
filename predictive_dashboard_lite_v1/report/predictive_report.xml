@@ -1,5 +1,4 @@
 <odoo>
-    <!-- QWeb template for the PDF -->
     <template id="predictive_report_tmpl">
         <t t-call="web.external_layout">
             <div class="page">
@@ -15,6 +14,7 @@
                     <span t-esc="dict(doc.fields_get(['group_by'])['group_by']['selection'])[doc.group_by]"/>
                 </p>
 
+                <!-- جدول عند وجود بيانات -->
                 <t t-if="doc.line_ids">
                     <table class="table table-sm o_main_table">
                         <thead>
@@ -45,7 +45,11 @@
                         </tbody>
                     </table>
                 </t>
-                <p t-else><em>No lines to print. Use Compute first.</em></p>
+
+                <!-- رسالة بدون t-else: شرط صريح -->
+                <p t-if="not doc.line_ids">
+                    <em>No lines to print. Use Compute first.</em>
+                </p>
             </div>
         </t>
     </template>
