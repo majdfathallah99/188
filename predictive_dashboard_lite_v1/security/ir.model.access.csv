@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_predictive_wizard,predictive.dashboard.wizard,predictive_dashboard_lite_v1.model_predictive_dashboard_wizard,base.group_user,1,1,1,1
+access_predictive_line,predictive.dashboard.line,predictive_dashboard_lite_v1.model_predictive_dashboard_line,base.group_user,1,0,0,1
