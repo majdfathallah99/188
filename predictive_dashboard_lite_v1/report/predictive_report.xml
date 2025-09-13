@@ -2,64 +2,67 @@
 <odoo>
   <data noupdate="0">
 
-    <!-- قالب تقرير التنبؤ -->
     <template id="predictive_report_tmpl">
-      <!-- خذ أول سجل (الويزارد الحالي) من docs، ومرّره كـ o لاستخدامه في external_layout -->
+      <!-- جهّز سياق التقرير -->
       <t t-set="doc" t-value="docs and docs[0]"/>
       <t t-set="o" t-value="doc"/>
 
-      <t t-call="web.external_layout">
-        <div class="page">
-          <t t-if="doc">
-            <h2>Predictive Forecast</h2>
-            <p>
-              <strong>Company:</strong>
-              <span t-esc="doc.company_id.display_name"/><br/>
-              <strong>Period:</strong>
-              <span t-esc="doc.date_from"/> → <span t-esc="doc.date_to"/><br/>
-              <strong>Method:</strong>
-              <span t-esc="doc.method"/><br/>
-              <strong>Group by:</strong>
-              <span t-esc="doc.group_by"/>
-            </p>
+      <!-- غلاف HTML + عنصر main المطلوب من محوّل PDF -->
+      <t t-call="web.html_container">
+        <main class="o_report_layout_standard">
+          <div class="page">
+            <t t-if="doc">
+              <h2>Predictive Forecast</h2>
 
-            <t t-if="doc.line_ids">
-              <table class="table table-sm o_main_table">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>UoM</th>
-                    <th class="text-end">Qty in Window</th>
-                    <th class="text-end">Daily Rate</th>
-                    <th class="text-end">Forecast</th>
-                    <th class="text-end">On Hand</th>
-                    <th class="text-end">Days till Shortage</th>
-                    <th class="text-end">Shortage Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <t t-foreach="doc.line_ids" t-as="l">
+              <p>
+                <strong>Company:</strong>
+                <span t-esc="doc.company_id.display_name"/><br/>
+                <strong>Period:</strong>
+                <span t-esc="doc.date_from"/> → <span t-esc="doc.date_to"/><br/>
+                <strong>Method:</strong>
+                <span t-esc="doc.method"/><br/>
+                <strong>Group by:</strong>
+                <span t-esc="doc.group_by"/>
+              </p>
+
+              <t t-if="doc.line_ids">
+                <table class="table table-sm o_main_table">
+                  <thead>
                     <tr>
-                      <td><span t-esc="l.display_key"/></td>
-                      <td><span t-esc="l.uom_id.display_name or ''"/></td>
-                      <td class="text-end"><span t-esc="l.qty_window"/></td>
-                      <td class="text-end"><span t-esc="('%.4f' % (l.daily_rate or 0.0))"/></td>
-                      <td class="text-end"><span t-esc="l.forecast_qty"/></td>
-                      <td class="text-end"><span t-esc="l.stock_onhand"/></td>
-                      <td class="text-end"><span t-esc="('%.2f' % (l.days_until_shortage or 0.0))"/></td>
-                      <td class="text-end"><span t-esc="l.shortage_date or ''"/></td>
+                      <th>Key</th>
+                      <th>UoM</th>
+                      <th class="text-end">Qty in Window</th>
+                      <th class="text-end">Daily Rate</th>
+                      <th class="text-end">Forecast</th>
+                      <th class="text-end">On Hand</th>
+                      <th class="text-end">Days till Shortage</th>
+                      <th class="text-end">Shortage Date</th>
                     </tr>
-                  </t>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    <t t-foreach="doc.line_ids" t-as="l">
+                      <tr>
+                        <td><span t-esc="l.display_key"/></td>
+                        <td><span t-esc="l.uom_id.display_name or ''"/></td>
+                        <td class="text-end"><span t-esc="l.qty_window"/></td>
+                        <td class="text-end"><span t-esc="('%.4f' % (l.daily_rate or 0.0))"/></td>
+                        <td class="text-end"><span t-esc="l.forecast_qty"/></td>
+                        <td class="text-end"><span t-esc="l.stock_onhand"/></td>
+                        <td class="text-end"><span t-esc="('%.2f' % (l.days_until_shortage or 0.0))"/></td>
+                        <td class="text-end"><span t-esc="l.shortage_date or ''"/></td>
+                      </tr>
+                    </t>
+                  </tbody>
+                </table>
+              </t>
+              <p t-else="">No lines to print. Use Compute first.</p>
             </t>
-            <p t-else="">No lines to print. Use Compute first.</p>
-          </t>
 
-          <t t-else="">
-            <p><em>No record found for printing.</em></p>
-          </t>
-        </div>
+            <t t-else="">
+              <p><em>No record found for printing.</em></p>
+            </t>
+          </div>
+        </main>
       </t>
     </template>
 
