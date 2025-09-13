@@ -1,0 +1,68 @@
+
+<odoo>
+    <record id="view_predictive_wizard_form" model="ir.ui.view">
+        <field name="name">predictive.dashboard.wizard.form.v110</field>
+        <field name="model">predictive.dashboard.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Predictive Dashboard">
+                <header>
+                    <button name="action_compute" type="object" string="Compute" class="btn-primary"/>
+                    <button name="action_export_xlsx" type="object" string="Export XLSX" attrs="{'invisible': [('state','!=','ready')]}"/>
+                    <button name="action_print_report" type="object" string="Print PDF" attrs="{'invisible': [('state','!=','ready')]}"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Scope">
+                            <field name="company_id"/>
+                            <field name="warehouse_id"/>
+                            <field name="location_ids" widget="many2many_tags" domain="[('usage','=','internal')]"/>
+                            <field name="product_category_id"/>
+                        </group>
+                        <group string="Window & Method">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="group_by"/>
+                            <field name="method"/>
+                            <field name="wma_window" attrs="{'invisible':[('method','!=','wma')]}"/>
+                            <field name="ets_alpha" attrs="{'invisible':[('method','!=','ets')]}"/>
+                            <field name="horizon_days"/>
+                            <field name="top_n"/>
+                        </group>
+                        <group string="Demand Source">
+                            <field name="use_stock_based"/>
+                            <field name="include_returns" attrs="{'readonly':[('use_stock_based','=',False)]}"/>
+                        </group>
+                        <group string="Alerts">
+                            <field name="warn_threshold_days"/>
+                            <field name="create_activities"/>
+                            <field name="send_email_notifications"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Forecast Lines">
+                            <field name="line_ids" nolabel="1">
+                                <tree editable="bottom">
+                                    <field name="display_key" string="Key"/>
+                                    <field name="uom_id" readonly="1"/>
+                                    <field name="qty_window" readonly="1"/>
+                                    <field name="window_days" readonly="1"/>
+                                    <field name="daily_rate" readonly="1" digits="[16,4]"/>
+                                    <field name="forecast_qty" readonly="1"/>
+                                    <field name="stock_onhand" readonly="1"/>
+                                    <field name="days_until_shortage" readonly="1" digits="[16,2]"/>
+                                    <field name="shortage_date" readonly="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Graph (Products Only)" attrs="{'invisible':[('group_by','!=','product')]}">
+                            <graph string="Forecast by Product" type="bar">
+                                <field name="display_key" type="row"/>
+                                <field name="forecast_qty" type="measure"/>
+                            </graph>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
