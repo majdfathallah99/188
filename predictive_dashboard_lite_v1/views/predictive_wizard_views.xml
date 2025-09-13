@@ -1,27 +1,17 @@
 <odoo>
-    <!-- نموذج الـ Wizard (Form) -->
     <record id="view_predictive_wizard_form" model="ir.ui.view">
         <field name="name">predictive.dashboard.wizard.form.v110</field>
         <field name="model">predictive.dashboard.wizard</field>
         <field name="arch" type="xml">
             <form string="Predictive Dashboard">
                 <header>
-                    <button name="action_compute"
-                            type="object"
-                            string="Compute"
-                            class="btn-primary"/>
-                    <button name="action_export_xlsx"
-                            type="object"
-                            string="Export XLSX"
-                            invisible="state != 'ready'"/>
-                    <button name="action_print_report"
-                            type="object"
-                            string="Print PDF"
-                            invisible="state != 'ready'"/>
+                    <button name="action_compute" type="object" string="Compute" class="btn-primary"/>
+                    <button name="action_export_xlsx" type="object" string="Export XLSX" invisible="state != 'ready'"/>
+                    <button name="action_print_report" type="object" string="Print PDF" invisible="state != 'ready'"/>
                 </header>
 
                 <sheet>
-                    <!-- KPIs سريعة أعلى الصفحة -->
+                    <!-- KPIs -->
                     <group string="KPIs" col="8">
                         <group col="4">
                             <field name="kpi_total_items" readonly="1"/>
@@ -33,7 +23,6 @@
                         </group>
                     </group>
 
-                    <!-- معلومات التشغيل الأساسية -->
                     <group col="8">
                         <group string="Scope">
                             <field name="company_id"/>
@@ -65,22 +54,9 @@
                         </group>
                     </group>
 
-                    <!-- تبويبات العرض -->
                     <notebook>
                         <page string="Forecast Lines">
-                            <!-- نترك One2many بدون تعريف tree داخلي؛ سيستخدم الـ tree الخارجي لموديل السطور -->
                             <field name="line_ids" nolabel="1"/>
-                        </page>
-
-                        <!-- رسم بياني سريع من نفس سطور الـ wizard -->
-                        <page string="Graph (by Key)" invisible="state != 'ready'">
-                            <!-- يعرض شريطياً Forecast لكل Key. يعمل عندما تكون السطور مُحتسبة -->
-                            <field name="line_ids" widget="graph" nolabel="1">
-                                <graph string="Forecast by Key" type="bar">
-                                    <field name="display_key" type="row"/>
-                                    <field name="forecast_qty" type="measure"/>
-                                </graph>
-                            </field>
                         </page>
                     </notebook>
                 </sheet>
@@ -88,26 +64,19 @@
         </field>
     </record>
 
-    <!-- قائمة + إجراء فتح الـ Wizard (لو عندك مسبقاً اتركها) -->
+    <!-- الإجراء والقائمة لفتح الـ Wizard (موجودين عندك غالبًا) -->
     <record id="action_predictive_dashboard" model="ir.actions.act_window">
         <field name="name">Predictive Dashboard</field>
         <field name="res_model">predictive.dashboard.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">current</field>
-        <field name="context">{}</field>
     </record>
 
-    <menuitem id="menu_predictive_root"
-              name="Predictive"
-              sequence="10"/>
+    <menuitem id="menu_predictive_root" name="Predictive" sequence="10"/>
+    <menuitem id="menu_predictive_dashboard" name="Dashboard" parent="menu_predictive_root"
+              action="action_predictive_dashboard" sequence="10"/>
 
-    <menuitem id="menu_predictive_dashboard"
-              name="Dashboard"
-              parent="menu_predictive_root"
-              action="action_predictive_dashboard"
-              sequence="10"/>
-
-    <!-- عرض لستة بكل عمليات الـ Wizard السابقة (List + Form) -->
+    <!-- عرض كل عمليات الـ Wizard (List + Form) -->
     <record id="view_predictive_wizard_list" model="ir.ui.view">
         <field name="name">predictive.dashboard.wizard.list</field>
         <field name="model">predictive.dashboard.wizard</field>
@@ -135,13 +104,8 @@
         <field name="name">All Operations</field>
         <field name="res_model">predictive.dashboard.wizard</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{}</field>
     </record>
 
-    <menuitem id="menu_predictive_all_operations"
-              name="All Operations"
-              parent="menu_predictive_root"
-              action="action_predictive_all_operations"
-              sequence="20"/>
-
+    <menuitem id="menu_predictive_all_operations" name="All Operations"
+              parent="menu_predictive_root" action="action_predictive_all_operations" sequence="20"/>
 </odoo>
