@@ -5,10 +5,20 @@
         <field name="arch" type="xml">
             <form string="Predictive Dashboard">
                 <header>
-                    <button name="action_compute" type="object" string="Compute" class="btn-primary"/>
-                    <button name="action_export_xlsx" type="object" string="Export XLSX" attrs="{'invisible': [('state','!=','ready')]}"/>
-                    <button name="action_print_report" type="object" string="Print PDF" attrs="{'invisible': [('state','!=','ready')]}"/>
+                    <button name="action_compute"
+                            type="object"
+                            string="Compute"
+                            class="btn-primary"/>
+                    <button name="action_export_xlsx"
+                            type="object"
+                            string="Export XLSX"
+                            invisible="state != 'ready'"/>
+                    <button name="action_print_report"
+                            type="object"
+                            string="Print PDF"
+                            invisible="state != 'ready'"/>
                 </header>
+
                 <sheet>
                     <group>
                         <group string="Scope">
@@ -17,20 +27,23 @@
                             <field name="location_ids" widget="many2many_tags" domain="[('usage','=','internal')]"/>
                             <field name="product_category_id"/>
                         </group>
+
                         <group string="Window &amp; Method">
                             <field name="date_from"/>
                             <field name="date_to"/>
                             <field name="group_by"/>
                             <field name="method"/>
-                            <field name="wma_window" attrs="{'invisible':[('method','!=','wma')]}"/>
-                            <field name="ets_alpha" attrs="{'invisible':[('method','!=','ets')]}"/>
+                            <field name="wma_window" invisible="method != 'wma'"/>
+                            <field name="ets_alpha" invisible="method != 'ets'"/>
                             <field name="horizon_days"/>
                             <field name="top_n"/>
                         </group>
+
                         <group string="Demand Source">
                             <field name="use_stock_based"/>
-                            <field name="include_returns" attrs="{'readonly':[('use_stock_based','=',False)]}"/>
+                            <field name="include_returns" readonly="not use_stock_based"/>
                         </group>
+
                         <group string="Alerts">
                             <field name="warn_threshold_days"/>
                             <field name="create_activities"/>
@@ -40,8 +53,8 @@
 
                     <notebook>
                         <page string="Forecast Lines">
-                            <!-- نعرض الـ One2many دون تعريف tree داخلي
-                                 وسيستخدم Odoo تلقائياً الـ tree الخارجي لموديل السطور -->
+                            <!-- نترك One2many بدون تعريف tree داخلي؛
+                                 سيستخدم الـ tree الخارجي لموديل السطور -->
                             <field name="line_ids" nolabel="1"/>
                         </page>
                     </notebook>
