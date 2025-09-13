@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Tree (list) view for all wizard runs -->
+    <record id="view_predictive_wizard_tree" model="ir.ui.view">
+        <field name="name">predictive.dashboard.wizard.tree</field>
+        <field name="model">predictive.dashboard.wizard</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="create_date"/>
+                <field name="company_id"/>
+                <field name="warehouse_id"/>
+                <field name="group_by"/>
+                <field name="method"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="horizon_days"/>
+                <field name="top_n"/>
+                <field name="state"/>
+                <field name="line_count"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- (اختياري) Search view -->
+    <record id="view_predictive_wizard_search" model="ir.ui.view">
+        <field name="name">predictive.dashboard.wizard.search</field>
+        <field name="model">predictive.dashboard.wizard</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="company_id"/>
+                <field name="warehouse_id"/>
+                <field name="method"/>
+                <field name="group_by"/>
+                <field name="state"/>
+                <filter string="Ready" name="flt_ready" domain="[('state','=','ready')]"/>
+                <filter string="Draft" name="flt_draft" domain="[('state','=','draft')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Company" name="grp_company" context="{'group_by':'company_id'}"/>
+                    <filter string="Warehouse" name="grp_wh" context="{'group_by':'warehouse_id'}"/>
+                    <filter string="Method" name="grp_method" context="{'group_by':'method'}"/>
+                    <filter string="State" name="grp_state" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window action -->
+    <record id="action_predictive_wizard_list" model="ir.actions.act_window">
+        <field name="name">All Operations</field>
+        <field name="res_model">predictive.dashboard.wizard</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_predictive_wizard_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">
+                No runs yet.
+            </p>
+            <p>
+                Use <b>Predictive Dashboard</b> to compute a new forecast. It will appear here.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu item under your module root -->
+    <menuitem id="menu_predictive_wizard_list"
+              name="All Operations"
+              parent="predictive_dashboard_lite_v1.menu_predictive_root"
+              action="action_predictive_wizard_list"
+              sequence="20"/>
+</odoo>
