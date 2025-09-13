@@ -49,6 +49,21 @@ class PredictiveDashboardWizard(models.TransientModel):
     line_ids = fields.One2many('predictive.dashboard.line', 'wizard_id', string='Lines')
     state = fields.Selection([('draft', 'Draft'), ('ready', 'Ready')], default='draft')
 
+    # ---------------------------
+    # Fix mojibake (wrong-encoded Arabic like Ø§Ù„...)
+    # ---------------------------
+    def _fix_mojibake(self, s):
+        """Attempt to fix UTF-8 text mis-decoded as latin-1 (e.g., Ø§Ù„...)."""
+        if not s:
+            return s
+        try:
+            bad_markers = ('Ã', 'Â', 'Ø', 'Ù', 'Ð', 'Ý')
+            if any(ch in s for ch in bad_markers):
+                return s.encode('latin1').decode('utf-8')
+        except Exception:
+            pass
+        return s
+
     def _location_domain(self):
         dom = [('usage', '=', 'internal')]
         if self.location_ids:
@@ -151,10 +166,15 @@ class PredictiveDashboardWizard(models.TransientModel):
             return s
 
     def _name_for_key(self, key):
+        """Return display name for product/category with mojibake fix."""
         if self.group_by == 'product':
-            return self.env['product.product'].browse(key).display_name
+            # إخفاء الكود الافتراضي من display_name لو كان مفعّل
+            prod = self.env['product.product'].browse(key).with_context(display_default_code=False)
+            name = prod.display_name or prod.name or str(key)
+            return self._fix_mojibake(name)
         else:
-            return self.env['product.category'].browse(key).display_name
+            cat = self.env['product.category'].browse(key)
+            return self._fix_mojibake(cat.display_name)
 
     def _uom_for_key(self, key):
         if self.group_by == 'product':
@@ -336,7 +356,7 @@ class PredictiveDashboardWizard(models.TransientModel):
                 'print_report_name': "'predictive_report_' + (object.company_id.name or '')",
             })
 
-        # 4) تنفيذ الطباعة (رسالة واضحة لو القالب مفقود/غير صحيح)
+        # 4) تنفيذ الطباعة
         try:
             return report.report_action(self)
         except Exception as e:
