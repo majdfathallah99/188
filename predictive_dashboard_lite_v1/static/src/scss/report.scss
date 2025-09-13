@@ -1,0 +1,20 @@
+@font-face {
+  font-family: "NotoNaskhArabic";
+  src: url("/predictive_dashboard_lite_v1/static/src/fonts/NotoNaskhArabic-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* واجهة التقرير RTL وخط عربي */
+.o_report_layout_standard, .o_report_layout_clean, .o_report_layout_boxed {
+  font-family: "NotoNaskhArabic", "Noto Sans", "DejaVu Sans", sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+/* خلّي الجدول نفسه LTR عشان الأعمدة الرقمية تبقى مرتبة */
+.o_main_table {
+  direction: ltr;
+  text-align: left;
+}
