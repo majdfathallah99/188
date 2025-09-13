@@ -31,13 +31,17 @@ class PredictiveDashboardWizard(models.TransientModel):
     horizon_days = fields.Integer(string='Forecast Horizon (days)', default=30)
     top_n = fields.Integer(string='Top N', default=20, help='Limit to top N by demand')
     group_by = fields.Selection([('product', 'Product'), ('category', 'Category')], default='product', required=True)
-    method = fields.Selection([('sma', 'Simple Moving Average'),
-                               ('wma', 'Weighted Moving Average'),
-                               ('ets', 'Exponential Smoothing')], default='sma', required=True)
+    method = fields.Selection([
+        ('sma', 'Simple Moving Average'),
+        ('wma', 'Weighted Moving Average'),
+        ('ets', 'Exponential Smoothing')
+    ], default='sma', required=True)
     wma_window = fields.Integer(string='WMA Window (days)', default=7)
     ets_alpha = fields.Float(string='ETS Alpha (0-1)', default=0.3)
-    use_stock_based = fields.Boolean(string='Use Stock Moves (outgoing/incoming)', default=False,
-                                     help='If off, uses sales order lines.')
+    use_stock_based = fields.Boolean(
+        string='Use Stock Moves (outgoing/incoming)', default=False,
+        help='If off, uses sales order lines.'
+    )
     include_returns = fields.Boolean(string='Include Returns (stock-based only)', default=True)
     warn_threshold_days = fields.Integer(string='Warn if Days till Shortage ≤', default=7)
     create_activities = fields.Boolean(string='Create Activities', default=False)
@@ -261,7 +265,10 @@ class PredictiveDashboardWizard(models.TransientModel):
         output = io.BytesIO()
         wb = xlsxwriter.Workbook(output, {'in_memory': True})
         ws = wb.add_worksheet('Forecast')
-        headers = ['Key', 'UoM', 'Qty in Window', 'Window Days', 'Daily Rate', 'Forecast', 'On Hand', 'Days till Shortage', 'Shortage Date']
+        headers = [
+            'Key', 'UoM', 'Qty in Window', 'Window Days', 'Daily Rate',
+            'Forecast', 'On Hand', 'Days till Shortage', 'Shortage Date'
+        ]
         for c, h in enumerate(headers):
             ws.write(0, c, h)
         row = 1
@@ -295,25 +302,49 @@ class PredictiveDashboardWizard(models.TransientModel):
         }
 
     def action_print_report(self):
-        """Return the QWeb PDF action with a safe fallback if XMLID is missing."""
+        """
+        Return the QWeb PDF action.
+        - يحاول عبر XMLID
+        - إن لم يوجد: يبحث بالتسمية التقنية
+        - إن لم يوجد: يُنشئ ir.actions.report ثم يطبع
+        """
         self.ensure_one()
         if not self.line_ids:
             raise UserError(_('Nothing to print. Compute first.'))
-        # 1) Try by XMLID
+
+        # 1) حاول بـ XMLID
         try:
             return self.env.ref('predictive_dashboard_lite_v1.action_predictive_report').report_action(self)
         except ValueError:
-            # 2) Fallback: search the report by its technical name and model
-            report = self.env['ir.actions.report'].sudo().search([
-                ('report_type', '=', 'qweb-pdf'),
-                ('report_name', '=', 'predictive_dashboard_lite_v1.predictive_report_tmpl'),
-                ('model', '=', 'predictive.dashboard.wizard'),
-            ], limit=1)
-            if report:
-                return report.report_action(self)
-            # 3) Helpful error if nothing found
-            raise UserError(_('Report not found. Ensure report/predictive_report.xml and '
-                              'report/predictive_report_action.xml are loaded, then Upgrade the module.'))
+            pass  # ننتقل للبدائل
+
+        # 2) البحث بالخصائص
+        Report = self.env['ir.actions.report'].sudo()
+        report = Report.search([
+            ('report_type', '=', 'qweb-pdf'),
+            ('report_name', '=', 'predictive_dashboard_lite_v1.predictive_report_tmpl'),
+            ('model', '=', 'predictive.dashboard.wizard'),
+        ], limit=1)
+
+        # 3) إنشاء السجل إن لم يوجد
+        if not report:
+            report = Report.create({
+                'name': 'Predictive Report',
+                'model': 'predictive.dashboard.wizard',
+                'report_type': 'qweb-pdf',
+                'report_name': 'predictive_dashboard_lite_v1.predictive_report_tmpl',
+                'print_report_name': "'predictive_report_' + (object.company_id.name or '')",
+            })
+
+        # 4) تنفيذ الطباعة (رسالة واضحة لو القالب مفقود/غير صحيح)
+        try:
+            return report.report_action(self)
+        except Exception as e:
+            raise UserError(_(
+                "Template not found or invalid.\n"
+                "Ensure this template exists and loads:\n"
+                "- predictive_dashboard_lite_v1.predictive_report_tmpl\n\n"
+                "Original error: %s") % str(e))
 
 
 class PredictiveDashboardLine(models.TransientModel):
