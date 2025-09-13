@@ -1,0 +1,12 @@
+
+<odoo>
+    <report
+        id="action_predictive_report"
+        model="predictive.dashboard.wizard"
+        string="Predictive Report"
+        report_type="qweb-pdf"
+        name="predictive_dashboard_lite.predictive_report_tmpl"
+        file="predictive_dashboard_lite.predictive_report_tmpl"
+        print_report_name="'predictive_report_' + object.company_id.name"
+    />
+</odoo>
