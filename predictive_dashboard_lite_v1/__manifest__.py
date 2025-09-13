@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Predictive Dashboard Lite',
-    'version': '1.1.6',  # bump لإجبار الترقية
+    'version': '1.1.7',  # bump لإجبار الترقية
     'summary': 'Predictive analytics for Sales & Inventory with XLSX export and alerts (Odoo 18 CE)',
     'description': '''
 Forecast sales & stock with multiple methods (SMA/WMA/ETS), warehouse/location filters,
@@ -19,10 +19,13 @@ category aggregation, XLSX export, and low-stock activities/email alerts.
         'views/predictive_line_views.xml',
         'report/predictive_report.xml',
         'report/predictive_report_action.xml',
-        # تمت إزالة 'data/ir_cron_demo.xml' لأنها تستخدم numbercall المحذوفة في Odoo 17+
     ],
     'assets': {
-        'web.assets_backend': []
+        'web.assets_backend': [],
+        # تحميل خط/تنسيق التقرير للـ PDF
+        'web.report_assets_common': [
+            'predictive_dashboard_lite_v1/static/src/scss/report.scss',
+        ],
     },
     'installable': True,
     'application': True,
