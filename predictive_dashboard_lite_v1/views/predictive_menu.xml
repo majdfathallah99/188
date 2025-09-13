@@ -1,0 +1,27 @@
+<odoo>
+    <!-- App Root: shows as a tile on Home. Use web_icon attribute (module,path or fa-icon) -->
+    <menuitem id="menu_predictive_app_root"
+              name="Predictive"
+              sequence="25"
+              web_icon="predictive_dashboard_lite,static/description/icon.svg"/>
+
+    <!-- Action: Predictive Wizard -->
+    <record id="action_predictive_wizard" model="ir.actions.act_window">
+        <field name="name">Predictive Dashboard</field>
+        <field name="res_model">predictive.dashboard.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Dashboard subtree under the App -->
+    <menuitem id="menu_predictive_root"
+              name="Predictive Dashboard"
+              parent="predictive_dashboard_lite.menu_predictive_app_root"
+              sequence="1"/>
+
+    <menuitem id="menu_predictive_wizard"
+              name="Dashboard"
+              parent="predictive_dashboard_lite.menu_predictive_root"
+              action="predictive_dashboard_lite.action_predictive_wizard"
+              sequence="1"/>
+</odoo>

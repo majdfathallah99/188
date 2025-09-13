@@ -1,0 +1,13 @@
+
+<odoo>
+    <record id="ir_cron_predictive_placeholder" model="ir.cron">
+        <field name="name">Predictive Placeholder</field>
+        <field name="active" eval="False"/>
+        <field name="model_id" ref="base.model_res_company"/>
+        <field name="state">code</field>
+        <field name="code"># Implement periodic tasks if needed</field>
+        <field name="interval_type">days</field>
+        <field name="interval_number">7</field>
+        <field name="numbercall">-1</field>
+    </record>
+</odoo>
