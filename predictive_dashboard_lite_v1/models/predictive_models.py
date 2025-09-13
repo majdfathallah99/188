@@ -34,6 +34,12 @@ class PredictiveDashboardWizard(models.TransientModel):
         help='Number of forecast lines in this run'
     )
 
+    # --- KPI fields (للاستخدام في كروت الداشبورد) ---
+    kpi_total_items = fields.Integer(string='Items')
+    kpi_total_forecast = fields.Float(string='Total Forecast')
+    kpi_total_onhand = fields.Float(string='Total On Hand')
+    kpi_at_risk_count = fields.Integer(string='At Risk (≤ Warn Days)')
+
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company, required=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
     location_ids = fields.Many2many('stock.location', string='Locations', domain=[('usage', '=', 'internal')])
@@ -281,6 +287,17 @@ class PredictiveDashboardWizard(models.TransientModel):
 
         created = self.env['predictive.dashboard.line'].create(lines_vals)
         self.state = 'ready'
+
+        # ---- حساب الـ KPIs بعد إنشاء السطور ----
+        self.kpi_total_items = len(created)
+        self.kpi_total_forecast = sum(created.mapped('forecast_qty'))
+        self.kpi_total_onhand = sum(created.mapped('stock_onhand'))
+        self.kpi_at_risk_count = sum(
+            1 for l in created
+            if (l.days_until_shortage or 0) and l.days_until_shortage <= self.warn_threshold_days
+        )
+        # -----------------------------------------
+
         self._post_alerts(created)
 
         return {
