@@ -10,11 +10,13 @@ try:
 except Exception:
     xlsxwriter = None
 
+
 def _daterange(d1, d2):
     cur = d1
     while cur <= d2:
         yield cur
         cur = cur + timedelta(days=1)
+
 
 class PredictiveDashboardWizard(models.TransientModel):
     _name = 'predictive.dashboard.wizard'
@@ -22,17 +24,20 @@ class PredictiveDashboardWizard(models.TransientModel):
 
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company, required=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
-    location_ids = fields.Many2many('stock.location', string='Locations', domain=[('usage','=','internal')])
+    location_ids = fields.Many2many('stock.location', string='Locations', domain=[('usage', '=', 'internal')])
     product_category_id = fields.Many2one('product.category', string='Product Category')
     date_from = fields.Date(string='From', default=lambda self: date.today() - timedelta(days=60), required=True)
     date_to = fields.Date(string='To', default=lambda self: date.today(), required=True)
     horizon_days = fields.Integer(string='Forecast Horizon (days)', default=30)
     top_n = fields.Integer(string='Top N', default=20, help='Limit to top N by demand')
-    group_by = fields.Selection([('product','Product'), ('category','Category')], default='product', required=True)
-    method = fields.Selection([('sma','Simple Moving Average'), ('wma','Weighted Moving Average'), ('ets','Exponential Smoothing')], default='sma', required=True)
+    group_by = fields.Selection([('product', 'Product'), ('category', 'Category')], default='product', required=True)
+    method = fields.Selection([('sma', 'Simple Moving Average'),
+                               ('wma', 'Weighted Moving Average'),
+                               ('ets', 'Exponential Smoothing')], default='sma', required=True)
     wma_window = fields.Integer(string='WMA Window (days)', default=7)
     ets_alpha = fields.Float(string='ETS Alpha (0-1)', default=0.3)
-    use_stock_based = fields.Boolean(string='Use Stock Moves (outgoing/incoming)', default=False, help='If off, uses sales order lines.')
+    use_stock_based = fields.Boolean(string='Use Stock Moves (outgoing/incoming)', default=False,
+                                     help='If off, uses sales order lines.')
     include_returns = fields.Boolean(string='Include Returns (stock-based only)', default=True)
     warn_threshold_days = fields.Integer(string='Warn if Days till Shortage ≤', default=7)
     create_activities = fields.Boolean(string='Create Activities', default=False)
@@ -41,37 +46,37 @@ class PredictiveDashboardWizard(models.TransientModel):
     state = fields.Selection([('draft', 'Draft'), ('ready', 'Ready')], default='draft')
 
     def _location_domain(self):
-        dom = [('usage','=','internal')]
+        dom = [('usage', '=', 'internal')]
         if self.location_ids:
-            dom = [('id','in', self.location_ids.ids)]
+            dom = [('id', 'in', self.location_ids.ids)]
         elif self.warehouse_id:
-            dom = [('id','child_of', self.warehouse_id.view_location_id.id)]
+            dom = [('id', 'child_of', self.warehouse_id.view_location_id.id)]
         return dom
 
     def _sale_domain(self):
         dom = [
-            ('order_id.state','in',['sale','done']),
-            ('order_id.company_id','=', self.company_id.id),
-            ('product_id.type','!=','service'),
-            ('order_id.date_order','>=', self.date_from),
-            ('order_id.date_order','<=', self.date_to),
+            ('order_id.state', 'in', ['sale', 'done']),
+            ('order_id.company_id', '=', self.company_id.id),
+            ('product_id.type', '!=', 'service'),
+            ('order_id.date_order', '>=', self.date_from),
+            ('order_id.date_order', '<=', self.date_to),
         ]
         if self.product_category_id:
-            dom.append(('product_id.categ_id','child_of', self.product_category_id.id))
+            dom.append(('product_id.categ_id', 'child_of', self.product_category_id.id))
         if self.warehouse_id:
-            dom.append(('order_id.warehouse_id','=', self.warehouse_id.id))
+            dom.append(('order_id.warehouse_id', '=', self.warehouse_id.id))
         return dom
 
     def _stock_move_domain(self):
         dom = [
-            ('company_id','=', self.company_id.id),
-            ('state','=','done'),
-            ('product_id.type','!=','service'),
-            ('date','>=', self.date_from),
-            ('date','<=', self.date_to),
+            ('company_id', '=', self.company_id.id),
+            ('state', '=', 'done'),
+            ('product_id.type', '!=', 'service'),
+            ('date', '>=', self.date_from),
+            ('date', '<=', self.date_to),
         ]
         if self.product_category_id:
-            dom.append(('product_id.categ_id','child_of', self.product_category_id.id))
+            dom.append(('product_id.categ_id', 'child_of', self.product_category_id.id))
         return dom
 
     def _read_daily_demand(self):
@@ -118,13 +123,13 @@ class PredictiveDashboardWizard(models.TransientModel):
         values = list(daily_series.values())
         n = len(values) if values else 1
         if self.method == 'sma':
-            return sum(values) / float(max(n,1))
+            return sum(values) / float(max(n, 1))
         elif self.method == 'wma':
             w = int(self.wma_window or 1)
             w = min(w, n)
             if w <= 0:
                 return 0.0
-            weights = list(range(1, w+1))
+            weights = list(range(1, w + 1))
             recent = values[-w:]
             num = sum(v * weights[i] for i, v in enumerate(recent))
             den = sum(weights)
@@ -154,12 +159,12 @@ class PredictiveDashboardWizard(models.TransientModel):
 
     def _onhand_for_key(self, key):
         Quant = self.env['stock.quant']
-        dom = [('company_id','=', self.company_id.id)]
+        dom = [('company_id', '=', self.company_id.id)]
         locs = self.env['stock.location'].search(self._location_domain())
         if locs:
-            dom.append(('location_id','in', locs.ids))
+            dom.append(('location_id', 'in', locs.ids))
         if self.group_by == 'product':
-            dom.append(('product_id','=', key))
+            dom.append(('product_id', '=', key))
             qty = sum(q.quantity for q in Quant.search(dom))
             return qty
         else:
@@ -178,7 +183,9 @@ class PredictiveDashboardWizard(models.TransientModel):
         for l in lines:
             if l.days_until_shortage and l.days_until_shortage <= self.warn_threshold_days:
                 summary = _('Low-stock alert: %s') % (l.display_key,)
-                note = _('On hand: %.2f, Daily rate: %.4f, Shortage date: %s') % (l.stock_onhand or 0.0, l.daily_rate or 0.0, l.shortage_date or 'N/A')
+                note = _('On hand: %.2f, Daily rate: %.4f, Shortage date: %s') % (
+                    l.stock_onhand or 0.0, l.daily_rate or 0.0, l.shortage_date or 'N/A'
+                )
                 if self.create_activities:
                     self.env['mail.activity'].create({
                         'res_model_id': self.env['ir.model']._get_id('res.users'),
@@ -227,7 +234,7 @@ class PredictiveDashboardWizard(models.TransientModel):
                 'shortage_date': shortage_date,
             })
 
-        lines_vals.sort(key=lambda v: v.get('forecast_qty',0.0), reverse=True)
+        lines_vals.sort(key=lambda v: v.get('forecast_qty', 0.0), reverse=True)
         if self.top_n and self.top_n > 0:
             lines_vals = lines_vals[:self.top_n]
 
@@ -254,20 +261,20 @@ class PredictiveDashboardWizard(models.TransientModel):
         output = io.BytesIO()
         wb = xlsxwriter.Workbook(output, {'in_memory': True})
         ws = wb.add_worksheet('Forecast')
-        headers = ['Key','UoM','Qty in Window','Window Days','Daily Rate','Forecast','On Hand','Days till Shortage','Shortage Date']
-        for c,h in enumerate(headers):
-            ws.write(0,c,h)
-        row=1
+        headers = ['Key', 'UoM', 'Qty in Window', 'Window Days', 'Daily Rate', 'Forecast', 'On Hand', 'Days till Shortage', 'Shortage Date']
+        for c, h in enumerate(headers):
+            ws.write(0, c, h)
+        row = 1
         for l in self.line_ids:
-            ws.write(row,0,l.display_key or '')
-            ws.write(row,1,l.uom_id.display_name if l.uom_id else '')
-            ws.write(row,2,l.qty_window or 0.0)
-            ws.write(row,3,l.window_days or 0)
-            ws.write(row,4,l.daily_rate or 0.0)
-            ws.write(row,5,l.forecast_qty or 0.0)
-            ws.write(row,6,l.stock_onhand or 0.0)
-            ws.write(row,7,l.days_until_shortage or 0.0)
-            ws.write(row,8,str(l.shortage_date or ''))
+            ws.write(row, 0, l.display_key or '')
+            ws.write(row, 1, l.uom_id.display_name if l.uom_id else '')
+            ws.write(row, 2, l.qty_window or 0.0)
+            ws.write(row, 3, l.window_days or 0)
+            ws.write(row, 4, l.daily_rate or 0.0)
+            ws.write(row, 5, l.forecast_qty or 0.0)
+            ws.write(row, 6, l.stock_onhand or 0.0)
+            ws.write(row, 7, l.days_until_shortage or 0.0)
+            ws.write(row, 8, str(l.shortage_date or ''))
             row += 1
         wb.close()
         output.seek(0)
@@ -288,12 +295,25 @@ class PredictiveDashboardWizard(models.TransientModel):
         }
 
     def action_print_report(self):
-        """Return the QWeb PDF action."""
+        """Return the QWeb PDF action with a safe fallback if XMLID is missing."""
         self.ensure_one()
         if not self.line_ids:
             raise UserError(_('Nothing to print. Compute first.'))
-        # تأكد أن XMLID يطابق اسم مجلد الموديول لديك
-        return self.env.ref('predictive_dashboard_lite_v1.action_predictive_report').report_action(self)
+        # 1) Try by XMLID
+        try:
+            return self.env.ref('predictive_dashboard_lite_v1.action_predictive_report').report_action(self)
+        except ValueError:
+            # 2) Fallback: search the report by its technical name and model
+            report = self.env['ir.actions.report'].sudo().search([
+                ('report_type', '=', 'qweb-pdf'),
+                ('report_name', '=', 'predictive_dashboard_lite_v1.predictive_report_tmpl'),
+                ('model', '=', 'predictive.dashboard.wizard'),
+            ], limit=1)
+            if report:
+                return report.report_action(self)
+            # 3) Helpful error if nothing found
+            raise UserError(_('Report not found. Ensure report/predictive_report.xml and '
+                              'report/predictive_report_action.xml are loaded, then Upgrade the module.'))
 
 
 class PredictiveDashboardLine(models.TransientModel):
