@@ -1,44 +1,55 @@
-
 <odoo>
+    <!-- QWeb template used by the PDF report -->
     <template id="predictive_report_tmpl">
         <t t-call="web.external_layout">
             <div class="page">
-                <h2>Predictive Dashboard Report</h2>
+                <h2>Predictive Forecast</h2>
                 <p>
-                    <strong>Company:</strong> <span t-esc="doc.company_id.name"/><br/>
-                    <strong>Period:</strong> <span t-esc="doc.date_from"/> → <span t-esc="doc.date_to"/><br/>
-                    <strong>Horizon (days):</strong> <span t-esc="doc.horizon_days"/><br/>
-                    <t t-if="doc.product_category_id">
-                        <strong>Category:</strong> <span t-esc="doc.product_category_id.display_name"/><br/>
-                    </t>
-                    <strong>Group By:</strong> <span t-esc="doc.group_by"/>, <strong>Method:</strong> <span t-esc="doc.method"/>
+                    <strong>Company:</strong>
+                    <span t-esc="doc.company_id.display_name"/>
+                    <br/>
+                    <strong>Period:</strong>
+                    <span t-esc="doc.date_from"/> → <span t-esc="doc.date_to"/>
+                    <br/>
+                    <strong>Method:</strong>
+                    <span t-esc="dict(doc.fields_get(['method'])['method']['selection'])[doc.method]"/>
+                    <br/>
+                    <strong>Group by:</strong>
+                    <span t-esc="dict(doc.fields_get(['group_by'])['group_by']['selection'])[doc.group_by]"/>
                 </p>
+
                 <table class="table table-sm o_main_table">
                     <thead>
                         <tr>
                             <th>Key</th>
-                            <th>Qty in Window</th>
-                            <th>Daily Rate</th>
-                            <th>Forecast</th>
-                            <th>On Hand</th>
-                            <th>Days till Shortage</th>
-                            <th>Shortage Date</th>
+                            <th>UoM</th>
+                            <th class="text-end">Qty in Window</th>
+                            <th class="text-end">Daily Rate</th>
+                            <th class="text-end">Forecast</th>
+                            <th class="text-end">On Hand</th>
+                            <th class="text-end">Days till Shortage</th>
+                            <th class="text-end">Shortage Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         <t t-foreach="doc.line_ids" t-as="l">
                             <tr>
                                 <td><span t-esc="l.display_key"/></td>
-                                <td class="text-right"><span t-esc="format_float(l.qty_window)"/></td>
-                                <td class="text-right"><span t-esc="('%.4f' % (l.daily_rate or 0.0))"/></td>
-                                <td class="text-right"><span t-esc="format_float(l.forecast_qty)"/></td>
-                                <td class="text-right"><span t-esc="format_float(l.stock_onhand)"/></td>
-                                <td class="text-right"><span t-esc="('%.2f' % (l.days_until_shortage or 0.0))"/></td>
-                                <td><span t-esc="l.shortage_date"/></td>
+                                <td><span t-esc="l.uom_id.display_name or ''"/></td>
+                                <td class="text-end"><span t-esc="l.qty_window"/></td>
+                                <td class="text-end"><span t-esc="('%.4f' % (l.daily_rate or 0.0))"/></td>
+                                <td class="text-end"><span t-esc="l.forecast_qty"/></td>
+                                <td class="text-end"><span t-esc="l.stock_onhand"/></td>
+                                <td class="text-end"><span t-esc="('%.2f' % (l.days_until_shortage or 0.0))"/></td>
+                                <td class="text-end"><span t-esc="l.shortage_date or ''"/></td>
                             </tr>
                         </t>
                     </tbody>
                 </table>
+
+                <p t-if="not doc.line_ids">
+                    <em>No lines to print. Use Compute first.</em>
+                </p>
             </div>
         </t>
     </template>
