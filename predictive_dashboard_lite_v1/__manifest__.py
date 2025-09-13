@@ -30,6 +30,5 @@ category aggregation, XLSX export, and low-stock activities/email alerts.
     'application': True,
     'auto_install': False,
 
-    # الهك: تنظيف القوائم المكررة بعد الترقية
-    'post_init_hook': 'post_init_hook',
+
 }
