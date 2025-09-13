@@ -17,6 +17,7 @@ category aggregation, XLSX export, and low-stock activities/email alerts.
         'views/predictive_menu.xml',
         'views/predictive_wizard_views.xml',
         'views/predictive_line_views.xml',
+        'views/predictive_wizard_list.xml',
         'report/predictive_report.xml',
         'report/predictive_report_action.xml',
     ],
