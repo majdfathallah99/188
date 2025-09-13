@@ -1,4 +1,3 @@
-
 <odoo>
     <record id="view_predictive_wizard_form" model="ir.ui.view">
         <field name="name">predictive.dashboard.wizard.form.v110</field>
@@ -18,7 +17,7 @@
                             <field name="location_ids" widget="many2many_tags" domain="[('usage','=','internal')]"/>
                             <field name="product_category_id"/>
                         </group>
-                        <group string="Window & Method">
+                        <group string="Window &amp; Method">
                             <field name="date_from"/>
                             <field name="date_to"/>
                             <field name="group_by"/>
