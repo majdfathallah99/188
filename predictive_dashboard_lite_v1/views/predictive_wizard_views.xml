@@ -40,19 +40,9 @@
 
                     <notebook>
                         <page string="Forecast Lines">
-                            <field name="line_ids" nolabel="1">
-                                <tree editable="bottom">
-                                    <field name="display_key" string="Key"/>
-                                    <field name="uom_id" readonly="1"/>
-                                    <field name="qty_window" readonly="1"/>
-                                    <field name="window_days" readonly="1"/>
-                                    <field name="daily_rate" readonly="1" digits="[16,4]"/>
-                                    <field name="forecast_qty" readonly="1"/>
-                                    <field name="stock_onhand" readonly="1"/>
-                                    <field name="days_until_shortage" readonly="1" digits="[16,2]"/>
-                                    <field name="shortage_date" readonly="1"/>
-                                </tree>
-                            </field>
+                            <!-- نعرض الـ One2many دون تعريف tree داخلي
+                                 وسيستخدم Odoo تلقائياً الـ tree الخارجي لموديل السطور -->
+                            <field name="line_ids" nolabel="1"/>
                         </page>
                     </notebook>
                 </sheet>
