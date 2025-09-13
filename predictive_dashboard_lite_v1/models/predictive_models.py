@@ -22,6 +22,18 @@ class PredictiveDashboardWizard(models.TransientModel):
     _name = 'predictive.dashboard.wizard'
     _description = 'Predictive Dashboard Wizard'
 
+    # اسم التشغيل + عداد السطور لعرضهما في List View
+    name = fields.Char(
+        string='Run Name',
+        default=lambda self: _('Run @ %s') % fields.Datetime.now(),
+        help='Label for this compute run'
+    )
+    line_count = fields.Integer(
+        string='Lines',
+        compute='_compute_line_count',
+        help='Number of forecast lines in this run'
+    )
+
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company, required=True)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
     location_ids = fields.Many2many('stock.location', string='Locations', domain=[('usage', '=', 'internal')])
@@ -48,6 +60,11 @@ class PredictiveDashboardWizard(models.TransientModel):
     send_email_notifications = fields.Boolean(string='Email Current User', default=False)
     line_ids = fields.One2many('predictive.dashboard.line', 'wizard_id', string='Lines')
     state = fields.Selection([('draft', 'Draft'), ('ready', 'Ready')], default='draft')
+
+    @api.depends('line_ids')
+    def _compute_line_count(self):
+        for rec in self:
+            rec.line_count = len(rec.line_ids)
 
     # ---------------------------
     # Fix mojibake (wrong-encoded Arabic like Ø§Ù„...)
