@@ -1,73 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Tree (list) view for all wizard runs -->
-    <record id="view_predictive_wizard_tree" model="ir.ui.view">
-        <field name="name">predictive.dashboard.wizard.tree</field>
+    <!-- List View -->
+    <record id="view_predictive_wizard_list" model="ir.ui.view">
+        <field name="name">predictive.dashboard.wizard.list</field>
         <field name="model">predictive.dashboard.wizard</field>
         <field name="arch" type="xml">
-            <tree>
+            <list string="Predictive Runs" create="1" delete="1" editable="bottom">
                 <field name="name"/>
-                <field name="create_date"/>
+                <field name="state"/>
                 <field name="company_id"/>
                 <field name="warehouse_id"/>
+                <field name="product_category_id"/>
                 <field name="group_by"/>
                 <field name="method"/>
                 <field name="date_from"/>
                 <field name="date_to"/>
                 <field name="horizon_days"/>
                 <field name="top_n"/>
-                <field name="state"/>
                 <field name="line_count"/>
-            </tree>
+                <!-- أزرار الإجراءات (بدون attrs في v17+) -->
+                <button name="action_compute" type="object" string="Compute"/>
+                <button name="action_export_xlsx" type="object" string="Export XLSX"/>
+                <button name="action_print_report" type="object" string="Print PDF"/>
+            </list>
         </field>
     </record>
 
-    <!-- (اختياري) Search view -->
+    <!-- Search View -->
     <record id="view_predictive_wizard_search" model="ir.ui.view">
         <field name="name">predictive.dashboard.wizard.search</field>
         <field name="model">predictive.dashboard.wizard</field>
         <field name="arch" type="xml">
-            <search>
+            <search string="Search Predictive Runs">
                 <field name="name"/>
                 <field name="company_id"/>
                 <field name="warehouse_id"/>
-                <field name="method"/>
+                <field name="product_category_id"/>
                 <field name="group_by"/>
-                <field name="state"/>
-                <filter string="Ready" name="flt_ready" domain="[('state','=','ready')]"/>
-                <filter string="Draft" name="flt_draft" domain="[('state','=','draft')]"/>
+                <field name="method"/>
+                <filter name="ready" string="Ready" domain="[('state','=','ready')]"/>
+                <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
                 <group expand="0" string="Group By">
-                    <filter string="Company" name="grp_company" context="{'group_by':'company_id'}"/>
-                    <filter string="Warehouse" name="grp_wh" context="{'group_by':'warehouse_id'}"/>
-                    <filter string="Method" name="grp_method" context="{'group_by':'method'}"/>
-                    <filter string="State" name="grp_state" context="{'group_by':'state'}"/>
+                    <filter name="g_company" string="Company" context="{'group_by':'company_id'}"/>
+                    <filter name="g_wh" string="Warehouse" context="{'group_by':'warehouse_id'}"/>
+                    <filter name="g_method" string="Method" context="{'group_by':'method'}"/>
+                    <filter name="g_state" string="State" context="{'group_by':'state'}"/>
                 </group>
             </search>
         </field>
     </record>
 
-    <!-- Window action -->
-    <record id="action_predictive_wizard_list" model="ir.actions.act_window">
-        <field name="name">All Operations</field>
+    <!-- Action -->
+    <record id="action_predictive_runs" model="ir.actions.act_window">
+        <field name="name">Predictive Runs</field>
         <field name="res_model">predictive.dashboard.wizard</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_predictive_wizard_search"/>
         <field name="context">{}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_empty_folder">
-                No runs yet.
-            </p>
-            <p>
-                Use <b>Predictive Dashboard</b> to compute a new forecast. It will appear here.
+            <p class="o_view_nocontent_smiling_face">
+                Create and compute a new predictive run.
             </p>
         </field>
     </record>
 
-    <!-- Menu item under your module root -->
-    <menuitem id="menu_predictive_wizard_list"
+    <!-- Menu item (تأكد من parent الصحيح لديك) -->
+    <menuitem id="menu_predictive_runs"
               name="All Operations"
               parent="predictive_dashboard_lite_v1.menu_predictive_root"
-              action="action_predictive_wizard_list"
-              sequence="20"/>
+              action="action_predictive_runs"
+              sequence="30"/>
 </odoo>
