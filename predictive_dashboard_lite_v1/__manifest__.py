@@ -26,6 +26,7 @@ category aggregation, XLSX export, and low-stock activities/email alerts.
         # تحميل خط/تنسيق التقرير للـ PDF
         'web.report_assets_common': [
             'predictive_dashboard_lite_v1/static/src/scss/report.scss',
+            'predictive_dashboard_lite_v1/static/src/scss/dashboard.scss',
         ],
     },
     'installable': True,
