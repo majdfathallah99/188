@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
@@ -287,6 +286,14 @@ class PredictiveDashboardWizard(models.TransientModel):
             'url': '/web/content/%s?download=1' % attach.id,
             'target': 'self',
         }
+
+    def action_print_report(self):
+        """Return the QWeb PDF action."""
+        self.ensure_one()
+        if not self.line_ids:
+            raise UserError(_('Nothing to print. Compute first.'))
+        # تأكد أن XMLID يطابق اسم مجلد الموديول لديك
+        return self.env.ref('predictive_dashboard_lite_v1.action_predictive_report').report_action(self)
 
 
 class PredictiveDashboardLine(models.TransientModel):
