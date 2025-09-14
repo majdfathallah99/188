@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="predictive_report_tmpl">
-    <!-- This wrapper guarantees a <main> element exists -->
-    <t t-call="web.html_container">
-      <main class="o_report_layout_standard"
-            dir="rtl"
-            style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
+    <!-- web.external_layout injects <head><meta charset="utf-8"> and global report CSS -->
+    <t t-call="web.external_layout">
+      <!-- IMPORTANT: .page ensures Odoo builds a <main> for the renderer -->
+      <div class="page" dir="rtl"
+           style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
 
         <h2 style="margin:0 0 8px 0;">Predictive Forecast</h2>
 
@@ -13,7 +13,10 @@
           <p style="margin:0;"><strong>Company:</strong> <span t-esc="docs.company_id.display_name"/></p>
           <p style="margin:0;">
             <strong>Period:</strong>
-            <span t-esc="docs.date_from"/> &#x0625;&#x0644;&#x0649; <span t-esc="docs.date_to"/>
+            <span t-esc="docs.date_from"/>
+            <!-- use entities to avoid editor encoding issues -->
+            &#x0625;&#x0644;&#x0649;
+            <span t-esc="docs.date_to"/>
           </p>
           <p style="margin:0;"><strong>Method:</strong> <span t-esc="docs.method"/></p>
           <p style="margin:0;"><strong>Group by:</strong> <span t-esc="docs.group_by"/></p>
@@ -35,7 +38,7 @@
           <tbody>
             <t t-foreach="docs.line_ids" t-as="l">
               <tr>
-                <td style="padding:6px 8px; direction:rtl; unicode-bidi:isolate-override; white-space:normal;">
+                <td style="padding:6px 8px; direction:rtl; unicode-bidi:isolate-override;">
                   <t t-esc="l.display_key or ''"/>
                 </td>
                 <td style="padding:6px 8px;"><t t-esc="l.uom_id.display_name or ''"/></td>
@@ -52,7 +55,7 @@
             </t>
           </tbody>
         </table>
-      </main>
+      </div>
     </t>
   </template>
 </odoo>
