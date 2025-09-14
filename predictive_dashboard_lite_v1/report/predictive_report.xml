@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="predictive_report_tmpl">
-    <!-- web.external_layout injects <head><meta charset="utf-8"> and global report CSS -->
-    <t t-call="web.external_layout">
-      <!-- IMPORTANT: .page ensures Odoo builds a <main> for the renderer -->
-      <div class="page" dir="rtl"
-           style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
+    <!-- Guarantees a <main> element -->
+    <t t-call="web.html_container">
+      <main class="o_report_layout_standard"
+            dir="rtl"
+            style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
 
-        <h2 style="margin:0 0 8px 0;">Predictive Forecast</h2>
+        <!-- change title text to verify the right template is used -->
+        <h2 style="margin:0 0 8px 0;">Predictive Forecast v5</h2>
 
         <div style="margin-bottom:12px;">
           <p style="margin:0;"><strong>Company:</strong> <span t-esc="docs.company_id.display_name"/></p>
           <p style="margin:0;">
             <strong>Period:</strong>
-            <span t-esc="docs.date_from"/>
-            <!-- use entities to avoid editor encoding issues -->
-            &#x0625;&#x0644;&#x0649;
-            <span t-esc="docs.date_to"/>
+            <span t-esc="docs.date_from"/> &#x0625;&#x0644;&#x0649; <span t-esc="docs.date_to"/>
           </p>
           <p style="margin:0;"><strong>Method:</strong> <span t-esc="docs.method"/></p>
           <p style="margin:0;"><strong>Group by:</strong> <span t-esc="docs.group_by"/></p>
@@ -55,7 +53,7 @@
             </t>
           </tbody>
         </table>
-      </div>
+      </main>
     </t>
   </template>
 </odoo>
