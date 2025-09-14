@@ -1,24 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <data noupdate="0">
-    <!-- PDF -->
-    <report
-      id="action_predictive_report_pdf"
-      model="predictive.dashboard.wizard"
-      string="Predictive Forecast"
-      report_type="qweb-pdf"
-      name="predictive_dashboard_lite_v1.predictive_report_tmpl"
-      file="predictive_dashboard_lite_v1.predictive_report_tmpl"
-      print_report_name="'predictive_report_' + (object.company_id.name or '')"
-    />
-    <!-- HTML (for quick verification in browser) -->
-    <report
-      id="action_predictive_report_html"
-      model="predictive.dashboard.wizard"
-      string="Predictive Forecast (HTML)"
-      report_type="qweb-html"
-      name="predictive_dashboard_lite_v1.predictive_report_tmpl"
-      file="predictive_dashboard_lite_v1.predictive_report_tmpl"
-    />
+    <report id="action_predictive_report_pdf"
+            model="predictive.dashboard.wizard"
+            string="Predictive Forecast"
+            report_type="qweb-pdf"
+            name="predictive_dashboard_lite_v1.predictive_report_tmpl"
+            file="predictive_dashboard_lite_v1.predictive_report_tmpl"
+            print_report_name="'predictive_report_' + (object.company_id.name or '')"/>
+
+    <report id="action_predictive_report_html"
+            model="predictive.dashboard.wizard"
+            string="Predictive Forecast (HTML)"
+            report_type="qweb-html"
+            name="predictive_dashboard_lite_v1.predictive_report_tmpl"
+            file="predictive_dashboard_lite_v1.predictive_report_tmpl"/>
   </data>
 </odoo>
