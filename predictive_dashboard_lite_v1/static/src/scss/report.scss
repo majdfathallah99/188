@@ -1,3 +1,4 @@
+/* Cairo font embedding for Arabic PDF reports */
 @font-face {
   font-family: "Cairo";
   src: url("/predictive_dashboard_lite_v1/static/src/fonts/Cairo-Regular.ttf") format("truetype");
@@ -13,9 +14,17 @@
   font-display: swap;
 }
 
-.o_report_layout_standard, .o_report_layout_clean, .o_report_layout_boxed {
+/* Apply Cairo + RTL across all report layouts */
+.o_report_layout_standard,
+.o_report_layout_clean,
+.o_report_layout_boxed {
   font-family: "Cairo", "Noto Sans", "DejaVu Sans", sans-serif;
   direction: rtl;
   text-align: right;
 }
-.o_main_table { direction: ltr; text-align: left; }
+
+/* Keep numbers/Latin tables in LTR */
+.o_main_table {
+  direction: ltr;
+  text-align: left;
+}
