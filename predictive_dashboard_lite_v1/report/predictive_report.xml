@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="predictive_report_tmpl">
-    <!-- external_layout injects <head><meta charset="utf-8"> + report CSS -->
+    <!-- external_layout provides header, footer, and proper meta charset -->
     <t t-call="web.external_layout">
-      <!-- extra safety: inject a meta tag anyway (wkhtmltopdf will still honor it) -->
-      <t t-raw="'<meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot;/>'"/>
 
       <div class="o_report_layout_standard"
            lang="ar" dir="rtl"
@@ -16,10 +14,7 @@
           <p style="margin:0;"><strong>Company:</strong> <span t-esc="docs.company_id.display_name"/></p>
           <p style="margin:0;">
             <strong>Period:</strong>
-            <span t-esc="docs.date_from"/>
-            <!-- write 'إلى' via HTML entities to rule out editor encoding -->
-            &#x0625;&#x0644;&#x0649;
-            <span t-esc="docs.date_to"/>
+            <span t-esc="docs.date_from"/> &#x0625;&#x0644;&#x0649; <span t-esc="docs.date_to"/>
           </p>
           <p style="margin:0;"><strong>Method:</strong> <span t-esc="docs.method"/></p>
           <p style="margin:0;"><strong>Group by:</strong> <span t-esc="docs.group_by"/></p>
