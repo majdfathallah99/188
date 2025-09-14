@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="predictive_report_tmpl">
-    <!-- external_layout wraps everything and provides <main> -->
-    <t t-call="web.external_layout">
-      <!-- MUST use .page so Odoo builds <main> correctly -->
-      <div class="page" lang="ar" dir="rtl"
-           style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
+    <!-- This wrapper guarantees a <main> element exists -->
+    <t t-call="web.html_container">
+      <main class="o_report_layout_standard"
+            dir="rtl"
+            style="text-align:right; font-family:'Cairo','NotoNaskhArabic','DejaVu Sans',sans-serif">
 
         <h2 style="margin:0 0 8px 0;">Predictive Forecast</h2>
 
@@ -52,7 +52,7 @@
             </t>
           </tbody>
         </table>
-      </div>
+      </main>
     </t>
   </template>
 </odoo>
