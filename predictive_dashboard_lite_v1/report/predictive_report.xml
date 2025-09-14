@@ -1,13 +1,9 @@
 <odoo>
   <template id="predictive_report_tmpl">
     <t t-call="web.html_container">
-      <!-- ستايل مباشر لضمان تطبيق الخط و RTL في PDF -->
       <main class="o_report_layout_standard"
-            style="
-              direction: rtl; text-align: right;
-              font-family: 'Cairo','Amiri','NotoNaskhArabic','DejaVu Sans',sans-serif;
-            ">
-
+            dir="rtl"
+            style="text-align:right; font-family: 'Cairo','Amiri','NotoNaskhArabic','DejaVu Sans',sans-serif;">
         <h2 style="margin:0 0 8px 0;">Predictive Forecast</h2>
 
         <div style="margin-bottom:12px;">
@@ -39,7 +35,6 @@
           <tbody>
             <t t-foreach="docs.line_ids" t-as="l">
               <tr>
-                <!-- خليه RTL + اسم عربي صريح -->
                 <td style="padding:6px 8px; direction:rtl; unicode-bidi:isolate-override; white-space:normal;">
                   <t t-esc="l.display_key or ''"/>
                 </td>
@@ -47,21 +42,16 @@
                 <td style="padding:6px 8px;"><t t-esc="'%.2f' % (l.qty_window or 0.0)"/></td>
                 <td style="padding:6px 8px;"><t t-esc="'%.4f' % (l.daily_rate or 0.0)"/></td>
                 <td style="padding:6px 8px;"><t t-esc="'%.2f' % (l.forecast_qty or 0.0)"/></td>
-                <!-- عرض المخزون بدون سالب -->
                 <td style="padding:6px 8px;"><t t-esc="'%.2f' % (max(l.stock_onhand or 0.0, 0.0))"/></td>
-                <!-- لو صفر أو سالب نعرض '—' -->
                 <td style="padding:6px 8px;">
                   <t t-if="(l.days_until_shortage or 0.0) &gt; 0.0" t-esc="'%.0f' % l.days_until_shortage"/>
                   <t t-else="1">—</t>
                 </td>
-                <td style="padding:6px 8px;">
-                  <t t-esc="l.shortage_date and l.shortage_date.strftime('%Y-%m-%d') or ''"/>
-                </td>
+                <td style="padding:6px 8px;"><t t-esc="l.shortage_date or ''"/></td>
               </tr>
             </t>
           </tbody>
         </table>
-
       </main>
     </t>
   </template>
