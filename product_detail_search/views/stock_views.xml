@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <data>
+
+    <!-- Inventory client action -->
     <record id="action_product_detail_search_dashboard" model="ir.actions.client">
       <field name="name">Find Product</field>
-      <field name="type">ir.actions.client</field> <!-- required -->
+      <field name="type">ir.actions.client</field> <!-- REQUIRED -->
       <field name="tag">product_detail_search_barcode_main_menu</field>
     </record>
 
+    <!-- Inventory > Find Product menu -->
     <menuitem id="menu_product_detail_search_dashboard"
               name="Find Product"
               parent="stock.menu_stock_root"
