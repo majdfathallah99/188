@@ -23,6 +23,7 @@
     'name': 'Find Products in Pos and Stock using Barcode',
     'version': '18.0.1.0.0',
     'category': 'Point of Sale',
+    'post_init_hook': 'post_init_fix_actions',
     'summary': 'Find Products in Pos and Stock using Barcode  utilizes barcode'
                ' scanning to quickly identify and track items. Each product'
                ' is assigned a unique barcode,',
