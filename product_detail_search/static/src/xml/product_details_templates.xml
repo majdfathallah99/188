@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates id="template" xml:space="preserve">
+  <t t-name="product_detail_search.ProductDetails" owl="1">
+    <div class="clientlist-screen screen">
+      <div class="screen-content">
+        <div class="top-content">
+          <div class="order-button floor-button d-flex align-items-center gap-2 px-4 fw-bolder cursor-pointer"
+               t-on-click="back">
+            <i class="fa fa-2x fa-angle-left pb-1" role="img" aria-label="Go Back" title="Go Back"/>
+            <span>Back</span>
+          </div>
+        </div>
+
+        <h1 style="text-align:center;font-size:28px;margin:31px 0;">Product Information</h1>
+
+        <!-- When nothing scanned yet or not found -->
+        <t t-if="!state.details">
+          <h2 style="display:flex;justify-content:center;">No products Found</h2>
+        </t>
+        <t t-else="">
+          <!-- Use the object from JS state -->
+          <t t-set="d" t-value="state.details"/>
+          <t t-set="currency"   t-value="d.currency_symbol || d.symbol || '$'"/>
+          <t t-set="uom"        t-value="d.uom || 'Units'"/>
+          <t t-set="unit_price" t-value="('price' in d) ? d.price : d.list_price"/>
+          <t t-set="pkg_qty"    t-value="d.package_qty || 0"/>
+          <t t-set="pkg_price"  t-value="d.package_price || 0"/>
+
+          <div class="container_product_info">
+            <div class="category-img">
+              <img t-attf-src="/web/image?model=product.product&amp;field=image_1920&amp;id=#{d.id}"/>
+            </div>
+
+            <!-- SIDE-BY-SIDE PRICE CARDS (inline Flex) -->
+            <div class="pds-cards"
+                 style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:12px 0 24px;">
+              <!-- Unit card -->
+              <div style="flex:1 1 360px; max-width:460px; display:flex;">
+                <div class="pc-card" style="background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.08);overflow:hidden; width:100%;">
+                  <div style="background:#1e5bd8;color:#fff;text-align:center;padding:8px 12px;font-weight:700;">قطعة</div>
+                  <div style="padding:18px 20px;text-align:center;">
+                    <div style="font-size:40px;font-weight:800;letter-spacing:.5px;"><t t-esc="unit_price"/></div>
+                    <div style="color:#8a8a8a;font-size:13px;margin-top:6px;"><t t-esc="currency"/> - <t t-esc="uom"/></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pack card -->
+              <t t-if="pkg_qty">
+                <div style="flex:1 1 360px; max-width:460px; display:flex;">
+                  <div class="pc-card" style="background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.08);overflow:hidden; width:100%;">
+                    <div style="background:#de6c18;color:#fff;text-align:center;padding:8px 12px;font-weight:700;">عبوة</div>
+                    <div style="padding:18px 20px;text-align:center;">
+                      <div style="font-size:40px;font-weight:800;letter-spacing:.5px;"><t t-esc="pkg_price"/></div>
+                      <div style="color:#8a8a8a;font-size:13px;margin-top:6px;"><t t-esc="uom"/> <t t-esc="pkg_qty"/> ×</div>
+                    </div>
+                  </div>
+                </div>
+              </t>
+            </div>
+
+            <!-- UoM Prices (from pos_multi_uom_price) -->
+            <t t-if="d.uom_prices && d.uom_prices.length">
+              <div class="uom-prices"
+                   style="background:#fff;border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.06);padding:14px 16px;margin:0 auto 18px;max-width:720px;">
+                <div style="font-weight:800;margin-bottom:10px;font-size:16px;">UOM PRICE</div>
+                <table style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:6px 4px;border-bottom:1px solid #eee;">Unit of Measure</th>
+                      <th style="text-align:right;padding:6px 4px;border-bottom:1px solid #eee;">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr t-foreach="d.uom_prices" t-as="up" t-key="up.uom_id">
+                      <td style="padding:8px 4px;border-bottom:1px dashed #f0f0f0;">
+                        <t t-esc="up.uom_name"/>
+                      </td>
+                      <td style="padding:8px 4px;text-align:right;border-bottom:1px dashed #f0f0f0;">
+                        <t t-esc="currency"/> <t t-esc="up.price"/>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </t>
+
+            <!-- Details table -->
+            <div style="width:fit-content;">
+              <table style="margin:0 auto;table-layout:fixed;width:auto;font-size:16px;margin:revert;">
+                <tr>
+                  <td class="label">Product Name:</td>
+                  <td class="value" t-esc="d.name"/>
+                </tr>
+                <tr>
+                  <td class="label">Product Specification:</td>
+                  <td class="value" t-esc="d.specification"/>
+                </tr>
+                <tr>
+                  <td class="label">Product Type:</td>
+                  <td class="value" t-esc="d.type"/>
+                </tr>
+                <tr>
+                  <td class="label">Product Tax:</td>
+                  <td class="value" t-esc="d.tax_amount"/>
+                </tr>
+                <tr>
+                  <td class="label">Barcode:</td>
+                  <td class="value" t-esc="d.barcode"/>
+                </tr>
+                <tr>
+                  <td class="label">Code:</td>
+                  <t t-if="d.default_code">
+                    <td class="value" t-esc="d.default_code"/>
+                  </t>
+                  <t t-else="">
+                    <td class="value">No code</td>
+                  </t>
+                </tr>
+                <tr>
+                  <td class="label">Product Category:</td>
+                  <td class="value" t-esc="d.category"/>
+                </tr>
+                <tr>
+                  <td class="label">Available Stock:</td>
+                  <td class="value" t-esc="d.qty_available"/>
+                </tr>
+                <tr>
+                  <td class="label">Company:</td>
+                  <t t-if="!d.company_id">
+                    <td class="value" style="padding-left:0px;">No company</td>
+                  </t>
+                  <t t-else="">
+                    <td class="value" t-esc="d.company_id[1]"/>
+                  </t>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </t>
+      </div>
+    </div>
+  </t>
+</templates>

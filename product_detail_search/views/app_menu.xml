@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+    <record id="action_product_detail_search_app" model="ir.actions.client">
+      <field name="name">Find Product</field>
+      <field name="type">ir.actions.client</field>
+      <field name="tag">product_detail_search_barcode_main_menu</field>
+    </record>
+
+    <menuitem id="menu_product_detail_search_app"
+              name="Find Product"
+              action="action_product_detail_search_app"
+              sequence="120"
+              web_icon="product_detail_search,static/description/icon.png"/>
+  </data>
+</odoo>
