@@ -3,6 +3,7 @@
 import { registry } from "@web/core/registry";
 import { Component, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { mount } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 
 class CustomDashBoardFindProduct extends Component {
@@ -11,7 +12,7 @@ class CustomDashBoardFindProduct extends Component {
         this.notification = useService("notification");
         this.state = useState({
             barcode: "",
-            details: null,   // will hold the FULL dict from product_detail_search (including uom_prices)
+            details: null, // keep the full dict (includes uom_prices, package_*, etc.)
         });
     }
 
@@ -33,7 +34,6 @@ class CustomDashBoardFindProduct extends Component {
         }
         try {
             const res = await this.orm.call("product.template", "product_detail_search", [code]);
-            // IMPORTANT: keep the whole row so uom_prices, package_* etc. survive
             this.state.details = res && res.length ? res[0] : null;
         } catch (e) {
             console.error("product_detail_search failed", e);
@@ -44,6 +44,21 @@ class CustomDashBoardFindProduct extends Component {
 }
 CustomDashBoardFindProduct.template = "CustomDashBoardFindProduct";
 
+// ---- Legacy fallback so old action runner won't crash ----
+function legacyClientAction(env, options) {
+    const target = document.createElement("div");
+    // Mount the OWL component manually and return a "widget-like" object
+    const app = mount(CustomDashBoardFindProduct, { env, target, props: {} });
+    return {
+        widget: {
+            el: target,
+            destroy: () => app.unmount(),
+        },
+    };
+}
+
+// Register for BOTH modern and legacy paths
 registry.category("actions").add("product_detail_search_barcode_main_menu", {
     component: CustomDashBoardFindProduct,
+    clientAction: legacyClientAction,
 });
