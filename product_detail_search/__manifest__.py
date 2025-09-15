@@ -39,7 +39,6 @@
     'depends': ['point_of_sale', 'stock'],
     'data': [
         'views/stock_views.xml' ,
-        'views/app_menu.xml'
     ],
     'images': [
         'static/description/banner.jpg',
