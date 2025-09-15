@@ -10,22 +10,16 @@ class CustomDashBoardFindProduct extends Component {
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.state = useState({
-            barcode: "",
-            details: null, // keep FULL dict (includes uom_prices, package_*, etc.)
-        });
+        this.state = useState({ barcode: "", details: null });
     }
-
     onInput(ev) {
         this.state.barcode = ev.target.value || "";
     }
-
     async onKeyDown(ev) {
         if (ev.key === "Enter") {
             await this._fetchDetails();
         }
     }
-
     async _fetchDetails() {
         const code = (this.state.barcode || "").trim();
         if (!code) {
@@ -34,8 +28,7 @@ class CustomDashBoardFindProduct extends Component {
         }
         try {
             const res = await this.orm.call("product.template", "product_detail_search", [code]);
-            // IMPORTANT: assign the whole row so uom_prices reaches the template
-            this.state.details = res && res.length ? res[0] : null;
+            this.state.details = res && res.length ? res[0] : null; // keep FULL dict (uom_prices, package_*, etc.)
         } catch (e) {
             console.error("product_detail_search failed", e);
             this.notification.add(_t("Lookup failed"), { type: "danger" });
@@ -45,8 +38,11 @@ class CustomDashBoardFindProduct extends Component {
 }
 CustomDashBoardFindProduct.template = "CustomDashBoardFindProduct";
 
-/** Legacy-compatible client action runner (used by some paths) */
-function clientAction(env /*, options */) {
+/**
+ * Legacy client action function. ActionManager expects a FUNCTION for this tag.
+ * We mount the OWL component and return a widget-like object with el/destroy.
+ */
+registry.category("actions").add("product_detail_search_barcode_main_menu", function (env /*, options */) {
     const target = document.createElement("div");
     const app = mount(CustomDashBoardFindProduct, { env, target, props: {} });
     return {
@@ -55,10 +51,4 @@ function clientAction(env /*, options */) {
             destroy: () => app.unmount(),
         },
     };
-}
-
-/** Register BOTH ways so any runner path works */
-registry.category("actions").add("product_detail_search_barcode_main_menu", {
-    component: CustomDashBoardFindProduct, // modern path
-    clientAction,                         // legacy path
 });
