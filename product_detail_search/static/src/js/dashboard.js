@@ -16,7 +16,7 @@ class CustomDashBoardFindProduct extends Component {
         });
     }
 
-    async onInput(ev) {
+    onInput(ev) {
         this.state.barcode = ev.target.value || "";
     }
 
@@ -45,11 +45,8 @@ class CustomDashBoardFindProduct extends Component {
 }
 CustomDashBoardFindProduct.template = "CustomDashBoardFindProduct";
 
-/**
- * Register as a **function** (legacy client action). This satisfies _executeClientAction
- * and mounts our OWL component under the hood.
- */
-registry.category("actions").add("product_detail_search_barcode_main_menu", function legacy(env, options) {
+/** Legacy-compatible client action runner (used by some paths) */
+function clientAction(env /*, options */) {
     const target = document.createElement("div");
     const app = mount(CustomDashBoardFindProduct, { env, target, props: {} });
     return {
@@ -58,4 +55,10 @@ registry.category("actions").add("product_detail_search_barcode_main_menu", func
             destroy: () => app.unmount(),
         },
     };
+}
+
+/** Register BOTH ways so any runner path works */
+registry.category("actions").add("product_detail_search_barcode_main_menu", {
+    component: CustomDashBoardFindProduct, // modern path
+    clientAction,                         // legacy path
 });
