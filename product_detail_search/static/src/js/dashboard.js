@@ -12,7 +12,7 @@ class CustomDashBoardFindProduct extends Component {
         this.notification = useService("notification");
         this.state = useState({
             barcode: "",
-            details: null, // keep the full dict (includes uom_prices, package_*, etc.)
+            details: null, // keep FULL dict (includes uom_prices, package_*, etc.)
         });
     }
 
@@ -34,6 +34,7 @@ class CustomDashBoardFindProduct extends Component {
         }
         try {
             const res = await this.orm.call("product.template", "product_detail_search", [code]);
+            // IMPORTANT: assign the whole row so uom_prices reaches the template
             this.state.details = res && res.length ? res[0] : null;
         } catch (e) {
             console.error("product_detail_search failed", e);
@@ -44,10 +45,12 @@ class CustomDashBoardFindProduct extends Component {
 }
 CustomDashBoardFindProduct.template = "CustomDashBoardFindProduct";
 
-// ---- Legacy fallback so old action runner won't crash ----
-function legacyClientAction(env, options) {
+/**
+ * Register as a **function** (legacy client action). This satisfies _executeClientAction
+ * and mounts our OWL component under the hood.
+ */
+registry.category("actions").add("product_detail_search_barcode_main_menu", function legacy(env, options) {
     const target = document.createElement("div");
-    // Mount the OWL component manually and return a "widget-like" object
     const app = mount(CustomDashBoardFindProduct, { env, target, props: {} });
     return {
         widget: {
@@ -55,10 +58,4 @@ function legacyClientAction(env, options) {
             destroy: () => app.unmount(),
         },
     };
-}
-
-// Register for BOTH modern and legacy paths
-registry.category("actions").add("product_detail_search_barcode_main_menu", {
-    component: CustomDashBoardFindProduct,
-    clientAction: legacyClientAction,
 });
