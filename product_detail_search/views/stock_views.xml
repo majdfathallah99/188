@@ -1,20 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <data noupdate="0">
 
-    <!-- Inventory client action -->
-    <record id="product_detail_search_barcode_action_main_menu" model="ir.actions.client">
-      <field name="name">Find Product Barcode</field>
-      <field name="type">ir.actions.client</field> <!-- REQUIRED -->
+    <!-- (Optional) Remove the old broken action/menu if they exist -->
+    <!-- Comment these two <delete> lines if you prefer to keep them for reference -->
+    <delete id="product_detail_search.product_detail_search_barcode_menu" model="ir.ui.menu"/>
+    <delete id="product_detail_search.product_detail_search_barcode_action_main_menu" model="ir.actions.client"/>
+
+    <!-- NEW, clean client action (typed + tagged) -->
+    <record id="action_find_product_ok" model="ir.actions.client">
+      <field name="name">Find Product (OK)</field>
+      <field name="type">ir.actions.client</field>  <!-- REQUIRED -->
       <field name="tag">product_detail_search_barcode_main_menu</field>
     </record>
 
-    <!-- Inventory > Find Product -->
-    <menuitem
-      id="product_detail_search_barcode_menu"
-      name="Find Product"
-      action="product_detail_search_barcode_action_main_menu"
-      parent="stock.menu_stock_root"
-      sequence="90"/>
+    <!-- NEW menu under Inventory pointing to the clean action -->
+    <menuitem id="menu_find_product_ok"
+              name="Find Product (OK)"
+              parent="stock.menu_stock_root"
+              action="action_find_product_ok"
+              sequence="5"/>
   </data>
 </odoo>
