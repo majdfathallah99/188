@@ -1,20 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <data noupdate="0">
-
-    <!-- Reuse the same client action your dashboard uses -->
-    <record id="action_find_product_app" model="ir.actions.client">
+  <data>
+    <record id="action_product_detail_search_app" model="ir.actions.client">
       <field name="name">Find Product</field>
+      <field name="type">ir.actions.client</field>
       <field name="tag">product_detail_search_barcode_main_menu</field>
     </record>
 
-    <!-- Root-level menu = app tile on the Home page -->
-    <menuitem id="menu_find_product_app"
+    <menuitem id="menu_product_detail_search_app"
               name="Find Product"
-              action="action_find_product_app"
-              sequence="25"
+              action="action_product_detail_search_app"
+              sequence="120"
               web_icon="product_detail_search,static/description/icon.png"/>
-              <!-- syntax: module_name,relative_icon_path  -->
-
   </data>
 </odoo>
