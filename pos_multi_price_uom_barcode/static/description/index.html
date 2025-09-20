@@ -1,0 +1,285 @@
+<section class="oe_container oe_dark" style="overflow: hidden;
+background: #d8dde1;">
+    <div class="mt32 mb32">
+        <div class="col-md-12">
+            <h2 class="oe_slogan" style="font-family: Quicksand; font-size: 35px;color: white;background-color: #35a8ff;"><b>FlexiUnit POS: Dynamic Pricing & Barcodes</b></h2>
+            <h3 class="oe_slogn"  style="font-family: Quicksand; text-align: center;">This module enhances Odoo POS to support multiple Units of Measure (UoM) per product with custom prices and dedicated barcodes. It enables businesses to sell products in different units (e.g., bottles, packs, or kilograms) directly from the POS, with automatic price adjustments and accurate inventory tracking.
+
+            </h3>
+
+        </div>
+    </div>
+    <div class="mt32 mb32">
+    <div class="col-md-12">
+        <h2 class="oe_slogan" style="font-family: Quicksand; color: white;background-color: #35a8ff; font-size: 35px;">
+            <b>Gaps Filled by the Module</b>
+        </h2>
+        <ul style="font-family: Quicksand; font-size: 20px; text-align: center; list-style-type: disc;">
+            <li>Allow products to have multiple UoMs (e.g., "Each," "Box of 12").</li>
+            <li>Assign unique barcodes and prices to each UoM.</li>
+            <li>Streamline checkout by scanning UoM-specific barcodes.</li>
+            <li>Ensure accurate margin calculations and stock moves based on selected UoM.</li>
+        </ul>
+
+        <table class="table table-bordered" style="font-family: Quicksand; font-size: 18px; text-align: center; margin-top: 20px;">
+            <thead>
+                <tr style="background-color: #35a8ff; color: white;">
+                    <th>Gap</th>
+                    <th>Module Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Inflexible UoM handling</td>
+                    <td>Multi-UoM support with custom pricing</td>
+                </tr>
+                <tr>
+                    <td>Barcode confusion</td>
+                    <td>Unique barcodes per UoM</td>
+                </tr>
+                <tr>
+                    <td>Inventory inaccuracies</td>
+                    <td>UoM-aware stock moves</td>
+                </tr>
+                <tr>
+                    <td>Manual bulk pricing</td>
+                    <td>Custom prices per UoM</td>
+                </tr>
+                <tr>
+                    <td>Margin calculation errors</td>
+                    <td>Ratio-based margin logic</td>
+                </tr>
+                <tr>
+                    <td>Refund ambiguity</td>
+                    <td>UoM-specific refund tracking</td>
+                </tr>
+                <tr>
+                    <td>Label limitations</td>
+                    <td>UoM-specific barcode labels</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+    <div class="mt32 mb32">
+    <div class="col-md-12">
+        <h2 class="oe_slogan" style="font-family: Quicksand;color: white;background-color: #35a8ff; font-size: 35px;">
+            <b>Scenarios</b>
+        </h2>
+        <h3 class="oe_slogn" style="font-family: Quicksand; text-align: center;"><b>Scenario 1: Retail Store Selling Beverages</b></h3>
+        <p style="font-family: Quicksand; font-size: 18px; text-align: center;">
+            <b>Product:</b> Soda (Base UoM: "Bottle", Price: $2).<br>
+            <b>Multi-UoM Setup:</b><br>
+            • "Pack of 6" (Barcode: 123456, Price: $10).<br>
+            • "Case of 24" (Barcode: 789012, Price: $36).<br><br>
+            <b>Workflow:</b><br>
+            • Cashier scans 123456 → POS adds 1 pack (6 bottles) at $10.<br>
+            • Customer requests 2 loose bottles → Cashier selects "Bottle" from UoM button, adds 2 units at $2 each.
+        </p>
+
+        <h3 class="oe_slogn" style="font-family: Quicksand; text-align: center;"><b>Scenario 2: Bulk Food Sales</b></h3>
+        <p style="font-family: Quicksand; font-size: 18px; text-align: center;">
+            <b>Product:</b> Rice (Base UoM: "Kg", Price: $5/kg).<br>
+            <b>Multi-UoM Setup:</b><br>
+            • "500g Bag" (Barcode: RICE500G, Price: $2.50).<br>
+            • "5kg Bag" (Barcode: RICE5KG, Price: $22).<br><br>
+            <b>Workflow:</b><br>
+            • Scanning RICE5KG adds a 5kg bag to the order. Inventory deducts 5kg.
+        </p>
+    </div>
+</div>
+</section>
+<br/><br/>
+
+<section class="oe_container">
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-cogs"></i><b> Multi-UoM Product Configuration</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Define alternative UoMs (e.g., "Pack," "Kg") with custom prices and barcodes.</li>
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Restrict UoMs to the same category as the base product UoM.</li>
+    </ul>
+
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-barcode"></i><b> Barcode-Driven UoM Selection</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Scan UoM-specific barcodes to auto-select the unit and apply its price.</li>
+    </ul>
+
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-shopping-cart"></i><b> POS Interface Integration</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> UoM Selection Button: Manually choose UoMs during checkout.</li>
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Dynamic price updates based on selected UoM.</li>
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Prevent merging order lines with different UoMs.</li>
+    </ul>
+
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-chart-line"></i><b> Accurate Inventory & Reporting</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Track stock moves using the selected UoM.</li>
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Margin calculations factor in UoM ratios (e.g., margin = subtotal - (cost / UoM ratio)).</li>
+    </ul>
+
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-print"></i><b> Custom Label Printing</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Print barcode labels for each UoM with its price.</li>
+    </ul>
+
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px;background-color: #35a8ff;">
+        <i class="fa fa-undo"></i><b> Refund Compatibility</b>
+    </div>
+
+    <ul class="list-unstyled mr32 ml32">
+        <li><i class="fa fa-chevron-right" style="color: #35a8ff;"></i> Refunds retain the original UoM and price for accuracy.</li>
+    </ul>
+    <div class="alert text-center mt32" style="color: black;font-family:quicksand;font-size:16px; background-color: #35a8ff;border-color: black;">
+        <i class="fa fa-wrench"></i><b> Module Cycle Shoots</b>
+    </div>
+    <img class="img-border img-responsive thumbnail mt32" src="1.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="2.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="3.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="4.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="5.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="6.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="7.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="8.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="9.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="10.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="11.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="12.png" style="width: 100%;"><br/>
+    <img class="img-border img-responsive thumbnail mt32" src="13.png" style="width: 100%;"><br/>
+</section>
+
+<hr />
+<div class="row pb-sm-5 px-1 pb-4">
+    <h2 class="w-100 text-center my-4" style="font-weight:600; font-size: 2rem; color: #2c3e50;">
+        Our Odoo Services
+    </h2>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Support Services</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Get expert support for your Odoo system to ensure smooth operations and rapid issue resolution.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Customization</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Tailor Odoo modules to match your business processes with precision and flexibility.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Integration</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Seamlessly integrate Odoo with third-party apps like payment gateways, CRMs, or eCommerce platforms.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Deployment</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Deploy Odoo on cloud or on-premise environments with scalability, security, and best practices in mind.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Migration</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Upgrade your Odoo system to the latest version while preserving data integrity and customizations.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Card -->
+    <div class="col-12 col-sm-6 col-md-4 mb-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary mb-3" style="font-size: 1.2rem; font-weight: 600;">Odoo Outsourcing</h5>
+                <p class="card-text text-muted" style="font-size: 0.95rem;">
+                    Let our experienced Odoo developers handle your project end-to-end, saving time and cost.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section id="contact" class="oe_container mt-5">
+    <div class="content">
+        <!-- Header -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8 text-center">
+                <h2 style="font-size: 2.2rem; font-weight: 600; color: #2c3e50; margin-bottom: 10px;">
+                    We're Here to Help
+                </h2>
+                <p style="font-size: 1.05rem; color: #6c757d; line-height: 1.6;">
+                    Have a question, need assistance, or want to request a feature?<br>
+                    Get in touch with us via email or WhatsApp — we’d love to hear from you.
+                </p>
+            </div>
+        </div>
+
+        <!-- Contact Methods -->
+        <div class="row justify-content-center mt-4">
+            <!-- Email Block -->
+            <div class="col-12 col-md-8 mb-4">
+                <a href="mailto:khaled.cs2017@gmail.com?subject=Product Support"
+                   style="display: flex; align-items: center; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: #fdfdfd; text-decoration: none; color: #4a4d52;">
+                    <img src="gmail_icon.png" alt="Email Us" style="width: 75px; height: 75px; margin-right: 25px;" />
+                    <div>
+                        <strong style="font-size: 1.3rem;">Email Us</strong><br />
+                        <span style="font-size: 1rem;">Send your questions, feedback, or requests</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- WhatsApp Block -->
+            <div class="col-12 col-md-8 mb-4">
+                <div style="display: flex; align-items: center; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; background: #fdfdfd;">
+                    <img src="whatsapp_barcode.png" alt="WhatsApp Us" style="width: 75px; height: 75px; margin-right: 25px;" />
+                    <div>
+                        <strong style="font-size: 1.3rem;">WhatsApp Us</strong><br />
+                        <span style="font-size: 1rem;">Scan the QR code to chat with us instantly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

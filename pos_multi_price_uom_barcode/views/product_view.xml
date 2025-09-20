@@ -1,0 +1,73 @@
+<odoo>
+    <record id="product_template_form_view" model="ir.ui.view">
+        <field name="name">product.template.form.inherit</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales']/group[@name='sale']" position="inside">
+                <group name="uom_price" string="UOM Price"
+                       invisible="not available_in_pos or product_variant_count &gt; 1">
+                    <field name="multi_uom_price_id" nolabel="1" colspan="2">
+                        <list editable="bottom">
+                            <field name="category_id" column_invisible="1"/>
+                            <field name="uom_id"/>
+                            <field name="price" force_save="1"/>
+                            <field name="barcode"/>
+                            <button string="Print Labels" type="object" name="action_open_label_layout"
+                                    invisible="parent.type == 'service'"/>
+
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+    <record id="product_normal_form_view_inherit" model="ir.ui.view">
+        <field name="name">product.product.form.inherit</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales']/group[@name='sale']" position="inside">
+                <group name="uom_price" string="UOM Price" invisible="not available_in_pos">
+                    <field name="lock_uom" invisible="1"/>
+                    <field name="multi_uom_price_id" nolabel="1" colspan="2" readonly="lock_uom == True">
+                        <list editable="bottom">
+                            <field name="category_id" column_invisible="1"/>
+                            <field name="uom_id"/>
+                            <field name="price" force_save="1"/>
+                            <field name="barcode"/>
+                            <button string="Print Labels" type="object" name="action_open_label_layout"
+                                    invisible="parent.type == 'service'"/>
+
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+    <record id="product_variant_easy_edit_view_uom_inherit" model="ir.ui.view">
+        <field name="name">product.product.product.view.form.easy.uom.inherit</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
+        <field name="arch" type="xml">
+            <data>
+                <xpath expr="//group[@name='sales']" position="after">
+                    <group name="uom_price" string="UOM Price" invisible="not available_in_pos">
+                        <field name="lock_uom" invisible="1"/>
+                        <field name="multi_uom_price_id" nolabel="1" colspan="2" readonly="lock_uom == True">
+                            <list editable="bottom">
+                                <field name="category_id" column_invisible="1"/>
+                                <field name="uom_id"/>
+                                <field name="price" force_save="1"/>
+                                <field name="barcode"/>
+                                <button string="Print Labels" type="object" name="action_open_label_layout"
+                                        invisible="parent.type == 'service'"/>
+
+                            </list>
+                        </field>
+                    </group>
+                </xpath>
+            </data>
+        </field>
+    </record>
+</odoo>
