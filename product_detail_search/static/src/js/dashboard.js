@@ -4,17 +4,6 @@ import { registry } from "@web/core/registry";
 import { Component, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
-function humanizeError(err) {
-    try {
-        // Odoo RPC error formats vary; extract something readable
-        const data = err?.message || err?.toString?.();
-        const msg = err?.data?.message || err?.message || data || "خطأ غير معروف";
-        return msg.replace(/(<([^>]+)>)/gi, ""); // strip HTML if present
-    } catch {
-        return "خطأ غير معروف";
-    }
-}
-
 export class ProductDetailDashboard extends Component {
     static template = "product_detail_search.Dashboard";
 
@@ -34,25 +23,19 @@ export class ProductDetailDashboard extends Component {
         await this._fetchAndRender(scan);
     }
 
+    // Fetch normal details, then enrich تعبئة from UoM Price lines (if missing).
     async _fetchAndRender(scan) {
         this.state.loading = true;
         this.state.details = null;
 
         try {
-            // 1) Primary RPC (server method on product.template)
-            let details;
-            try {
-                details = await this.orm.call("product.template", "product_detail_search", [scan]);
-                if (!details || typeof details !== "object") {
-                    throw new Error("لم يتم العثور على المنتج أو استجابة غير متوقعة.");
-                }
-            } catch (err) {
-                console.error("[product_detail_search] product_detail_search failed:", err);
-                this.notification.add("فشل استدعاء المنتج. " + humanizeError(err), { type: "danger" });
-                return; // stop here; nothing to render
+            let details = await this.orm.call("product.template", "product_detail_search", [scan]);
+            if (!details || typeof details !== "object") {
+                this.notification.add("لم يتم العثور على المنتج.", { type: "warning" });
+                return;
             }
 
-            // 2) Enrich التعبئة from UoM Price lines (safe: ignore errors)
+            // Fill تعبئة data from UoM Price helper if server didn't include it
             try {
                 if (!(details.package_qty && details.package_price)) {
                     const pid = details.product_id || null;
@@ -69,22 +52,30 @@ export class ProductDetailDashboard extends Component {
                         details.package_name = payload.package_name;
                     }
                 }
-            } catch (err) {
-                console.warn("[product_detail_search] uom_pack_from_lines failed:", err);
-                // Don't notify the user; unit card can still render
+            } catch (e) {
+                // don't block unit card
+                console.warn("[product_detail_search] pack enrich failed:", e);
             }
 
-            // 3) Render
+            // Precompute the small subtitles so the template stays clean
+            details._unit_sub = `${details.currency_symbol || ""} – ${details.uom_name || ""}`;
+            details._pack_sub = details.package_qty
+                ? `${details.uom_name || ""} ${details.package_qty} ×`
+                : "";
+
             this.state.details = details;
+        } catch (err) {
+            console.error(err);
+            this.notification.add("تعذر جلب البيانات. تحقق من الاتصال أو الصلاحيات.", { type: "danger" });
         } finally {
             this.state.loading = false;
         }
     }
 }
 
-// Register under the exact tag your menu opens
+// Register under the action tag your menu opens
 registry.category("actions").add("product_detail_search_barcode_main_menu", ProductDetailDashboard);
-// Optional legacy alias if your menu/action used another tag earlier
+// Optional legacy alias
 registry.category("actions").add("product_detail_search.dashboard", ProductDetailDashboard);
 
 export default ProductDetailDashboard;
