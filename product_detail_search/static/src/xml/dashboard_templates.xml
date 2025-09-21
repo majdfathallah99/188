@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-
-  <!-- ===== Unit (قطعة) card ===== -->
+  <!-- Unit (قطعة) -->
   <t t-name="product_detail_search.UnitCard">
     <div class="sf-card">
       <div class="sf-card-title">قطعة</div>
@@ -12,9 +11,8 @@
     </div>
   </t>
 
-  <!-- ===== Pack (التعبئة) card — relaxed condition ===== -->
+  <!-- Pack (التعبئة) — render when quantity exists -->
   <t t-name="product_detail_search.PackCard">
-    <!-- render whenever a quantity exists; price can be 0.0 in edge cases -->
     <t t-if="('package_qty' in details) and details.package_qty">
       <div class="sf-card">
         <div class="sf-card-title">
@@ -32,14 +30,15 @@
     </t>
   </t>
 
-  <!-- ===== Dashboard wrapper (the template OWL is looking for) ===== -->
+  <!-- Dashboard wrapper -->
   <t t-name="product_detail_search.Dashboard">
     <div class="o_product_detail_search o_form_view o_xxl">
       <div class="o_form_sheet_bg">
         <div class="o_form_sheet">
           <h2>Find Product</h2>
+
           <form t-on-submit.prevent="onSearch" class="o_row o_gap">
-            <input t-model="state.query" placeholder="اكتب أو امسح باركود" class="o_input" />
+            <input t-model="state.query" placeholder="اكتب أو امسح باركود" class="o_input"/>
             <button type="submit" class="btn btn-primary">بحث</button>
           </form>
 
@@ -58,5 +57,4 @@
       </div>
     </div>
   </t>
-
 </templates>
