@@ -1,60 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-  <!-- Unit (قطعة) -->
-  <t t-name="product_detail_search.UnitCard">
-    <div class="sf-card">
-      <div class="sf-card-title">قطعة</div>
-      <div class="sf-card-value">
-        <t t-esc="details.currency_symbol"/> <t t-esc="details.price"/>
-        <span class="sf-uom"> - <t t-esc="details.uom_name"/></span>
-      </div>
-    </div>
-  </t>
 
-  <!-- Pack (التعبئة) — render when quantity exists -->
-  <t t-name="product_detail_search.PackCard">
-    <t t-if="('package_qty' in details) and details.package_qty">
-      <div class="sf-card">
-        <div class="sf-card-title">
-          التعبئة
-          <t t-if="details.package_name">
-            <span> (</span><t t-esc="details.package_name"/><span>)</span>
-          </t>
-        </div>
-        <div class="sf-card-value">
-          <t t-esc="details.currency_symbol"/> <t t-esc="details.package_price"/>
-          <span class="sf-x"> × </span>
-          <t t-esc="details.package_qty"/>
-        </div>
-      </div>
-    </t>
-  </t>
-
-  <!-- Dashboard wrapper -->
+  <!-- ===== Dashboard wrapper ===== -->
   <t t-name="product_detail_search.Dashboard">
-    <div class="o_product_detail_search o_form_view o_xxl">
-      <div class="o_form_sheet_bg">
-        <div class="o_form_sheet">
-          <h2>Find Product</h2>
-
-          <form t-on-submit.prevent="onSearch" class="o_row o_gap">
-            <input t-model="state.query" placeholder="اكتب أو امسح باركود" class="o_input"/>
-            <button type="submit" class="btn btn-primary">بحث</button>
-          </form>
-
-          <t t-if="state.loading">
-            <div class="o_mt16">...جاري التحميل</div>
-          </t>
-
-          <t t-if="state.details">
-            <t t-set="details" t-value="state.details"/>
-            <div class="sf-cards o_mt24 o_row o_wrap o_gap">
-              <t t-call="product_detail_search.UnitCard"/>
-              <t t-call="product_detail_search.PackCard"/>
-            </div>
-          </t>
-        </div>
+    <div class="pds o_form_view">
+      <div class="pds__search">
+        <form t-on-submit.prevent="onSearch" class="pds__searchForm">
+          <input t-model="state.query"
+                 class="pds__input"
+                 placeholder="امسح الباركود | Scan or type barcode"/>
+          <button type="submit" class="btn btn-primary pds__btn">بحث</button>
+        </form>
+        <div class="pds__barcodeDot" aria-hidden="true"/>
       </div>
+
+      <t t-if="state.details">
+        <t t-set="details" t-value="state.details"/>
+        <div class="pds__cards">
+          <!-- قطعة -->
+          <div class="pdsCard pdsCard--blue">
+            <div class="pdsCard__title">قطعة</div>
+            <div class="pdsCard__value"><t t-esc="details.price or 0"/></div>
+            <div class="pdsCard__sub"><t t-esc="details._unit_sub"/></div>
+          </div>
+
+          <!-- عبوة -->
+          <div class="pdsCard pdsCard--orange">
+            <div class="pdsCard__title">عبوة</div>
+            <div class="pdsCard__value">
+              <t t-esc="details.package_price or 0"/>
+            </div>
+            <div class="pdsCard__sub">
+              <t t-esc="details._pack_sub or ''"/>
+            </div>
+          </div>
+        </div>
+      </t>
     </div>
   </t>
+
 </templates>
