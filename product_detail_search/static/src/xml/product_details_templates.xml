@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
-  <!-- ===== Unit (قطعة) card ===== -->
+  <!-- Unit (قطعة) -->
   <t t-name="product_detail_search.UnitCard">
     <div class="sf-card">
       <div class="sf-card-title">قطعة</div>
@@ -12,8 +12,7 @@
     </div>
   </t>
 
-  <!-- ===== Pack (التعبئة) card — condition relaxed =====
-       Renders whenever a pack quantity exists. Price can be 0.0 if needed. -->
+  <!-- Pack (التعبئة) -->
   <t t-name="product_detail_search.PackCard">
     <t t-if="('package_qty' in details) and details.package_qty">
       <div class="sf-card">
@@ -32,14 +31,17 @@
     </t>
   </t>
 
-  <!-- ===== Simple wrapper that shows both cards when details exist ===== -->
+  <!-- Simple wrapper that renders both cards when details exist -->
   <t t-name="product_detail_search.Dashboard">
     <div class="o_product_detail_search">
-      <!-- your search input / header lives elsewhere; keep your own markup -->
+      <!-- put your search input & buttons here -->
+      <form t-on-submit.prevent="onSearch">
+        <input t-model="state.query" placeholder="اكتب أو امسح باركود" />
+        <button type="submit">بحث</button>
+      </form>
 
       <t t-if="state and state.details">
         <t t-set="details" t-value="state.details"/>
-
         <div class="sf-cards">
           <t t-call="product_detail_search.UnitCard"/>
           <t t-call="product_detail_search.PackCard"/>
