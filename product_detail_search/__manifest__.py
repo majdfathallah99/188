@@ -59,6 +59,7 @@
             'product_detail_search/static/src/js/dashboard.js',
             'product_detail_search/static/src/xml/dashboard_templates.xml',
             'product_detail_search/static/src/css/dashboard.css',
+            'product_detail_search/static/src/js/uom_pack_patch.js',
         ],
     },
     'license': 'LGPL-3',
