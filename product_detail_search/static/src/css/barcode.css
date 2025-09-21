@@ -1,0 +1,82 @@
+/* ---------- Layout & RTL ---------- */
+.pds {
+  padding: 36px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pds.rtl { direction: rtl; }
+
+/* ---------- Search pill (bigger) ---------- */
+.pds .scan { margin: 10px 0 24px; }
+.pds .scan-input{
+  width: 760px; max-width: 96vw; height: 64px;
+  border: 3px solid #111; border-radius: 18px;
+  padding: 10px 20px; font-size: 20px; text-align: center; outline: none;
+  background: #fff;
+}
+.pds .scan-input::placeholder{ opacity:.7; }
+.pds .scan-input:focus{ box-shadow: 0 0 0 4px rgba(17,17,17,.07); }
+
+/* ---------- Header: round icon + product name (bigger) ---------- */
+.pds .head{
+  display:flex; flex-direction:column; align-items:center;
+  margin: 10px 0 16px;
+}
+.pds .head .logo{
+  width: 84px; height: 84px; border-radius: 999px;
+  background:#f4f5f7; padding:14px; object-fit:contain;
+  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+}
+/* BIGGER product name */
+.pds .head .name{
+  margin-top: 10px;
+  font-size: 36px;      /* was 26px */
+  font-weight: 800;     /* bolder */
+  letter-spacing: .2px;
+  color:#2b2b2b;
+}
+
+/* ---------- Cards row (spacious) ---------- */
+.pds .cards{ display:flex; gap:28px; flex-wrap:wrap; justify-content:center; }
+
+/* ---------- Card (bigger) ---------- */
+.pds .tile{
+  width: 520px; max-width: 96vw;
+  border-radius: 16px; background:#fff; overflow:hidden;
+  box-shadow: 0 10px 26px rgba(20,20,20,.08);
+}
+/* BIGGER labels: قطعة / عبوة */
+.pds .tile .tile-title{
+  text-align:center; font-weight:800; color:#fff;
+  padding:16px 18px; font-size:28px;   /* was 20px */
+}
+.pds .tile.piece .tile-title{ background:#1f5bd3; }   /* blue */
+.pds .tile.pack  .tile-title{ background:#d46a1f; }   /* orange */
+
+.pds .tile .tile-value{
+  text-align:center; font-size:72px; line-height:1.08;
+  font-weight:900; letter-spacing:.6px; padding:24px 18px 8px; color:#222;
+}
+.pds .tile .tile-sub{
+  text-align:center; color:#8a8a8a; padding:0 18px 22px; font-size:18px;
+}
+
+/* ---------- Not found text (clearer) ---------- */
+.pds .not-found{ margin-top:16px; font-size:20px; color:#b33; }
+
+/* ---------- Responsive (phones/tablets) ---------- */
+@media (max-width: 1024px){
+  .pds .scan-input{ width: 92vw; height: 58px; font-size:18px; }
+  .pds .head .logo{ width:72px; height:72px; }
+  .pds .head .name{ font-size: 30px; }        /* adjust down on tablets */
+  .pds .tile{ width: 92vw; }
+  .pds .tile .tile-title{ font-size:24px; }   /* adjust down on tablets */
+  .pds .tile .tile-value{ font-size:60px; }
+  .pds .tile .tile-sub{ font-size:16px; }
+}
+@media (max-width: 480px){
+  .pds .head .name{ font-size: 26px; }        /* phones */
+  .pds .tile .tile-title{ font-size:20px; }   /* phones */
+  .pds .tile .tile-value{ font-size:48px; }
+}
