@@ -38,8 +38,11 @@
     'website': "https://www.cybrosys.com",
     'depends': ['point_of_sale', 'stock'],
     'data': [
-        'views/stock_views.xml' ,
-        'views/app_menu.xml'
+        'views/stock_views.xml',
+        'views/app_menu.xml',
+        # If and only if you DON'T already have a client action record,
+        # then add this next line and include the XML file from section 3:
+        # 'views/product_detail_search_action_menu.xml',
     ],
     'images': [
         'static/description/banner.jpg',
@@ -59,6 +62,10 @@
             'product_detail_search/static/src/js/dashboard.js',
             'product_detail_search/static/src/xml/dashboard_templates.xml',
             'product_detail_search/static/src/css/dashboard.css',
+
+            # NEW: register an alias so the actions registry has the key
+            # that your menu/action expects.
+            'product_detail_search/static/src/js/action_registry_alias.js',
         ],
     },
     'license': 'LGPL-3',
@@ -66,3 +73,4 @@
     'application': True,
     'auto_install': False,
 }
+
