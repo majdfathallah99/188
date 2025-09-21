@@ -9,7 +9,7 @@ ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 class ProductTemplate(models.Model):
     _inherit = "product.template"
 
-    # ---------------- utilities ----------------
+    # ---------- utils ----------
     @api.model
     def _normalize_scan(self, text):
         if not text:
@@ -29,21 +29,21 @@ class ProductTemplate(models.Model):
         if not scan:
             return self.env["product.product"], False
 
-        # 1) product by barcode or default_code
+        # 1) product by barcode or code
         product = Product.search(
             ["|", ("barcode", "=", scan), ("default_code", "=", scan)], limit=1
         )
         if product:
             return product, "variant"
 
-        # 2) template by barcode or default_code
+        # 2) template by barcode or code
         tmpl = Template.search(
             ["|", ("barcode", "=", scan), ("default_code", "=", scan)], limit=1
         )
         if tmpl and tmpl.product_variant_id:
             return tmpl.product_variant_id, "template"
 
-        # 3) packaging barcode -> resolve product (pricing will NOT use packaging)
+        # 3) packaging barcode (identify product only)
         pack = Packaging.search([("barcode", "=", scan)], limit=1)
         if pack:
             if pack.product_id:
@@ -53,40 +53,29 @@ class ProductTemplate(models.Model):
 
         return self.env["product.product"], False
 
-    # --------- UoM helpers ---------
+    # ---------- UoM helpers ----------
     def _ratio_to_base(self, from_uom, to_base_uom):
-        """How many base units are in 1 `from_uom`."""
+        """How many base units in 1 `from_uom`."""
         return from_uom._compute_quantity(1.0, to_base_uom)
 
-    def _sort_pref_bigger(self, uom):
-        """Key to prefer 'bigger' UoM first (smaller factor == bigger)."""
-        # factor can be 0 for reference; we still want bigger first
+    def _pref_key(self, uom):
+        """Prefer bigger UoM first (smaller factor), then anything else."""
         return (0 if getattr(uom, "uom_type", "") == "bigger" else 1, uom.factor or 1.0)
 
-    # --------- UoM price line discovery (covers many add-ons) ---------
-    def _iter_uom_price_lines(self, product):
+    # ---------- Dynamic discovery of UoM-Price lines ----------
+    def _iter_uom_price_lines_dynamic(self, product):
         """
-        Yield tuples (uom, price) from various schemas:
-          - One2many on product.product or product.template:
-            multi_uom_price_ids / uom_price_ids / uom_prices_ids / uom_price_line_ids
-          - Standalone models: product.multi.uom.price, product.tmpl.multi.uom.price,
-            product.uom.price, product.uom.price.line
+        Yield (uom, price) from any One2many lines on product/product.template
+        whose comodel has a UoM field and a price field.
+        Works with many modules (multi_uom_price, uom_price_ids, etc.).
         """
         base_cat_id = product.uom_id.category_id.id
-
-        # 1) O2M fields on product/product.template commonly used by UoM price modules
-        o2m_field_names = [
-            "multi_uom_price_ids",
-            "uom_price_ids",
-            "uom_prices_ids",
-            "uom_price_line_ids",
-        ]
-        price_field_names = ("price", "uom_price", "amount", "list_price")
+        price_field_names = ("price", "uom_price", "amount", "list_price", "fixed_price")
         uom_field_names = ("uom_id", "uom")
 
-        def extract_from_record(recset):
-            for rec in recset:
-                # find uom field
+        def extract(recset):
+            for rec in recset.sudo():
+                # UoM field
                 uom = None
                 for fn in uom_field_names:
                     if fn in rec._fields:
@@ -96,7 +85,7 @@ class ProductTemplate(models.Model):
                     continue
                 if uom.category_id.id != base_cat_id:
                     continue
-                # find price field
+                # Price field
                 price = None
                 for pf in price_field_names:
                     if pf in rec._fields:
@@ -106,65 +95,56 @@ class ProductTemplate(models.Model):
                     continue
                 yield (uom, price)
 
-        # product first
-        for field in o2m_field_names:
-            if field in product._fields:
-                lines = getattr(product.sudo(), field)
-                if lines:
-                    for t in extract_from_record(lines.sudo()):
-                        yield t
+        # 1) One2many on product (variant)
+        for fname, field in product._fields.items():
+            if field.type != "one2many":
+                continue
+            try:
+                comodel = self.env[field.comodel_name]
+            except Exception:
+                continue
+            # Quick schema check
+            if "uom_id" not in comodel._fields and "uom" not in comodel._fields:
+                continue
+            if not any(p in comodel._fields for p in ("price", "uom_price", "amount", "list_price", "fixed_price")):
+                continue
+            lines = getattr(product.sudo(), fname)
+            if lines:
+                for tup in extract(lines):
+                    yield tup
 
-        # then template
+        # 2) One2many on template
         tmpl = product.product_tmpl_id.sudo()
-        for field in o2m_field_names:
-            if field in tmpl._fields:
-                lines = getattr(tmpl, field)
-                if lines:
-                    for t in extract_from_record(lines.sudo()):
-                        yield t
-
-        # 2) Standalone models used by some modules
-        candidate_models = [
-            "product.multi.uom.price",
-            "product.tmpl.multi.uom.price",
-            "product.uom.price",
-            "product.uom.price.line",
-        ]
-        for model in candidate_models:
-            if model not in self.env:
+        for fname, field in tmpl._fields.items():
+            if field.type != "one2many":
                 continue
-            Line = self.env[model].sudo()
-            domain = []
-            if "product_id" in Line._fields:
-                domain.append(("product_id", "=", product.id))
-            elif "product_tmpl_id" in Line._fields:
-                domain.append(("product_tmpl_id", "=", tmpl.id))
-            else:
+            try:
+                comodel = self.env[field.comodel_name]
+            except Exception:
                 continue
-            lines = Line.search(domain)
-            for (uom, price) in extract_from_record(lines):
-                yield (uom, price)
+            if "uom_id" not in comodel._fields and "uom" not in comodel._fields:
+                continue
+            if not any(p in comodel._fields for p in ("price", "uom_price", "amount", "list_price", "fixed_price")):
+                continue
+            lines = getattr(tmpl, fname)
+            if lines:
+                for tup in extract(lines):
+                    yield tup
 
     def _pick_best_uom_price(self, product):
-        """
-        Return (pack_uom, pack_price) preferring:
-          - UoM in same category
-          - 'bigger' UoM first, then by largest ratio (i.e., smallest factor)
-        """
-        base = product.uom_id
-        candidates = list(self._iter_uom_price_lines(product))
+        """Return (pack_uom, pack_price) or (None, None)."""
+        candidates = list(self._iter_uom_price_lines_dynamic(product))
         if not candidates:
             return (None, None)
-        # sort by preference
-        candidates.sort(key=lambda t: self._sort_pref_bigger(t[0]))
+        candidates.sort(key=lambda t: self._pref_key(t[0]))
         return candidates[0][0], candidates[0][1]
 
-    # ---------------- public RPC ----------------
+    # ---------- Public RPC ----------
     @api.model
     def product_detail_search(self, scan):
         """
-        Called from JS: this.orm.call('product.template','product_detail_search',[scan])
-        Returns a dict consumed by your Find Product UI.
+        JS calls: this.orm.call('product.template','product_detail_search',[scan])
+        Returns dict consumed by the Find Product UI.
         """
         product, scanned_as = self._find_product_from_scan(scan)
         if not product:
@@ -176,10 +156,10 @@ class ProductTemplate(models.Model):
         base_uom = product.uom_id
         base_cat = base_uom.category_id
 
-        # ----- قطعة (unit) -----
+        # قطعة (unit)
         unit_price = product.lst_price
 
-        # ----- التعبئة from UoM Price line (preferred) -----
+        # التعبئة from UoM-Price lines (preferred)
         pack_uom, line_price = self._pick_best_uom_price(product)
 
         package_qty = 0.0
@@ -187,8 +167,8 @@ class ProductTemplate(models.Model):
         package_name = False
 
         if pack_uom:
-            package_qty = self._ratio_to_base(pack_uom, base_uom)  # e.g., Dozens -> 12
-            package_price = currency.round(line_price)              # use the *line* price
+            package_qty = self._ratio_to_base(pack_uom, base_uom)   # e.g., Dozens -> 12
+            package_price = currency.round(line_price)               # use line's price (e.g., 72.00)
             package_name = pack_uom.display_name
         else:
             # Fallback: first 'bigger' UoM × unit price
@@ -202,9 +182,7 @@ class ProductTemplate(models.Model):
                 package_price = currency.round(unit_price * package_qty)
                 package_name = bigger.display_name
 
-        # payload
         return {
-            # identity
             "product_id": product.id,
             "product_tmpl_id": product.product_tmpl_id.id,
             "product_display_name": product.display_name,
@@ -219,9 +197,9 @@ class ProductTemplate(models.Model):
             "uom_category_id": base_cat.id,
 
             # التعبئة
-            "package_qty": package_qty,         # e.g., 12
-            "package_price": package_price,     # e.g., 72.00 from UoM Price line
-            "package_name": package_name,       # e.g., "Dozens"
+            "package_qty": package_qty,
+            "package_price": package_price,
+            "package_name": package_name,
 
             # currency
             "currency_id": currency.id,
