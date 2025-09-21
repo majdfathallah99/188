@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Client action: tag MUST match your JS registry key -->
+  <record id="action_product_detail_search_barcode" model="ir.actions.client">
+    <field name="name">Find Product</field>
+    <field name="tag">product_detail_search_barcode_main_menu</field>
+  </record>
+
+  <!-- Menu that opens the action (change parent to where you want it) -->
+  <menuitem id="menu_product_detail_search_barcode"
+            name="Find Product"
+            parent="point_of_sale.menu_point_root"
+            action="action_product_detail_search_barcode"
+            sequence="90"/>
+</odoo>
