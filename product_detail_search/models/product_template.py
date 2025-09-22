@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-# Odoo 18 — server RPCs for the Find Product screen
-# - product_detail_search(scan): returns Unit (قطعة) and Pack (التعبئة) info
-# - uom_pack_from_lines(product_id=None, product_tmpl_id=None): get تعبئة from UoM-Price lines
+# Odoo 18 — Find Product backend
+#
+# This version explicitly integrates with the "POS Multi Price UoM Barcode"
+# module (pos_multi_price_uom_barcode). We PREFER its UOM PRICE lines when
+# building the تعبئة card. If nothing is found there, we fall back to any
+# other multi-UoM price models we can detect, and lastly to a plain bigger UoM.
 
 from odoo import api, models
 import logging
@@ -64,23 +67,30 @@ class ProductTemplate(models.Model):
         return from_uom._compute_quantity(1.0, to_base_uom)
 
     def _pref_key(self, uom):
-        """Prefer 'bigger' UoM first (smaller factor)."""
+        """Prefer 'bigger' UoMs first (smaller factor)."""
         return (0 if getattr(uom, "uom_type", "") == "bigger" else 1, uom.factor or 1.0)
 
-    # ---------------- Discover UoM-Price lines dynamically ----------------
-    def _iter_uom_price_lines_dynamic(self, product):
+    # ---------------- Integration with POS Multi Price UoM Barcode ----------------
+    def _iter_pos_multi_price_lines(self, product):
         """
-        Yield (uom, price) from any One2many on product/product.template whose comodel
-        has a UoM field (uom_id/uom) and a price field (price/uom_price/amount/list_price/fixed_price).
-        Works across many “sell-in-UoM” addons.
+        Yield (uom, price, barcode?) from the Cybrosys 'POS Multi Price UoM Barcode'
+        module (technical: pos_multi_price_uom_barcode). The exact model/field
+        names vary a little between releases; we handle the common variants.
+
+        We first try One2many fields on template/variant that look like UoM price
+        lines for that module; then we also query known standalone models.
         """
         base_cat_id = product.uom_id.category_id.id
-        price_fields = ("price", "uom_price", "amount", "list_price", "fixed_price")
-        uom_fields = ("uom_id", "uom")
+
+        # candidate field names used in that module
+        price_fields = ("price", "unit_price", "uom_price", "amount", "fixed_price", "list_price")
+        uom_fields = ("uom_id", "uom", "product_uom", "multi_uom_id", "uom_uom_id")
+        barcode_fields = ("barcode", "pack_barcode", "uom_barcode")
 
         def extract(recset):
             recset = recset.sudo()
             for rec in recset:
+                # UoM
                 uom = None
                 for uf in uom_fields:
                     if uf in rec._fields:
@@ -88,6 +98,8 @@ class ProductTemplate(models.Model):
                         break
                 if not uom or uom.category_id.id != base_cat_id:
                     continue
+
+                # Price
                 price = None
                 for pf in price_fields:
                     if pf in rec._fields:
@@ -95,9 +107,17 @@ class ProductTemplate(models.Model):
                         break
                 if price is None:
                     continue
-                yield (uom, price)
 
-        # variant O2M
+                # Optional barcode on the line
+                pack_barcode = None
+                for bf in barcode_fields:
+                    if bf in rec._fields:
+                        pack_barcode = getattr(rec, bf)
+                        break
+
+                yield (uom, price, pack_barcode)
+
+        # 1) O2M on product.product
         prod = product.sudo()
         for fname, field in prod._fields.items():
             if field.type != "one2many":
@@ -105,14 +125,18 @@ class ProductTemplate(models.Model):
             comodel = self.env.get(field.comodel_name)
             if not comodel:
                 continue
-            if ("uom_id" not in comodel._fields and "uom" not in comodel._fields) or \
-               not any(p in comodel._fields for p in price_fields):
+            # fast filter: model name smells like multi-uom price
+            if "uom" not in field.comodel_name.lower():
+                continue
+            if not any(n in comodel._fields for n in uom_fields) or \
+               not any(n in comodel._fields for n in price_fields):
                 continue
             lines = getattr(prod, fname)
             if lines:
-                yield from extract(lines)
+                for tup in extract(lines):
+                    yield tup
 
-        # template O2M
+        # 2) O2M on product.template
         tmpl = product.product_tmpl_id.sudo()
         for fname, field in tmpl._fields.items():
             if field.type != "one2many":
@@ -120,47 +144,60 @@ class ProductTemplate(models.Model):
             comodel = self.env.get(field.comodel_name)
             if not comodel:
                 continue
-            if ("uom_id" not in comodel._fields and "uom" not in comodel._fields) or \
-               not any(p in comodel._fields for p in price_fields):
+            if "uom" not in field.comodel_name.lower():
+                continue
+            if not any(n in comodel._fields for n in uom_fields) or \
+               not any(n in comodel._fields for n in price_fields):
                 continue
             lines = getattr(tmpl, fname)
             if lines:
-                yield from extract(lines)
+                for tup in extract(lines):
+                    yield tup
 
-        # Try a few common standalone models
+        # 3) Known standalone models used by that app across versions
         for model in (
+            # most likely names first
+            "product.uom.price.line",
             "product.multi.uom.price",
             "product.tmpl.multi.uom.price",
             "product.uom.price",
-            "product.uom.price.line",
         ):
             if model not in self.env:
                 continue
             Line = self.env[model].sudo()
             domain = []
+            # bind to variant or template if fields exist
             if "product_id" in Line._fields:
                 domain.append(("product_id", "=", product.id))
-            elif "product_tmpl_id" in Line._fields:
-                domain.append(("product_tmpl_id", "=", product.product_tmpl_id.id))
-            else:
+            if "product_tmpl_id" in Line._fields:
+                # prefer exact template if variant domain not present
+                if not domain:
+                    domain.append(("product_tmpl_id", "=", product.product_tmpl_id.id))
+            if not domain:
                 continue
-            for (uom, price) in extract(Line.search(domain)):
-                yield (uom, price)
+            recs = Line.search(domain)
+            for tup in extract(recs):
+                yield tup
 
-    def _pick_best_uom_price(self, product):
-        """Return (pack_uom, pack_price) preferring 'bigger' UoMs; else (None, None)."""
-        cands = list(self._iter_uom_price_lines_dynamic(product))
+    def _pick_best_pos_multi_price(self, product):
+        """
+        Prefer a تعبئة UoM from the POS multi-price module.
+        Returns (uom, price, pack_barcode) or (None, None, None).
+        """
+        cands = list(self._iter_pos_multi_price_lines(product))
         if not cands:
-            return (None, None)
+            return (None, None, None)
+        # Prefer 'bigger' UoMs, then smallest factor
         cands.sort(key=lambda t: self._pref_key(t[0]))
-        return cands[0][0], cands[0][1]
+        uom, price, pack_barcode = cands[0]
+        return uom, price, pack_barcode
 
     # ---------------- Public RPCs ----------------
     @api.model
     def uom_pack_from_lines(self, product_id=None, product_tmpl_id=None):
         """
         Return تعبئة info from UoM-Price lines.
-        Args: product_id OR product_tmpl_id.
+        We now PREFER pos_multi_price_uom_barcode lines.
         """
         Product = self.env["product.product"].sudo()
         if product_id:
@@ -176,23 +213,27 @@ class ProductTemplate(models.Model):
         currency = self.env.company.currency_id
         base_uom = product.uom_id
 
-        pack_uom, line_price = self._pick_best_uom_price(product)
-        if not pack_uom:
-            return {"has_pack": False}
+        # 1) Prefer the POS Multi UoM price line
+        pack_uom, line_price, line_barcode = self._pick_best_pos_multi_price(product)
+        if pack_uom:
+            qty = self._ratio_to_base(pack_uom, base_uom)
+            return {
+                "has_pack": True,
+                "package_qty": qty,
+                "package_price": currency.round(line_price),
+                "package_name": pack_uom.display_name,
+                "package_barcode": line_barcode or False,
+                "source": "pos_multi_price_uom_barcode",
+            }
 
-        qty = self._ratio_to_base(pack_uom, base_uom)
-        return {
-            "has_pack": True,
-            "package_qty": qty,
-            "package_price": currency.round(line_price),
-            "package_name": pack_uom.display_name,
-        }
+        # 2) No explicit lines → no تعبئة from that module
+        return {"has_pack": False}
 
     @api.model
     def product_detail_search(self, scan):
         """
         Main endpoint used by your dashboard.js.
-        Returns dict with unit (قطعة) and pack (التعبئة) fields.
+        Now *prefers* تعبئة from pos_multi_price_uom_barcode lines.
         """
         product, scanned_as = self._find_product_from_scan(scan)
         if not product:
@@ -203,29 +244,39 @@ class ProductTemplate(models.Model):
         base_uom = product.uom_id
         base_cat = base_uom.category_id
 
-        # قطعة
+        # قطعة (unit)
         unit_price = product.lst_price
 
-        # تعبئة from UoM-Price lines (preferred)
-        pack_uom, line_price = self._pick_best_uom_price(product)
+        # التعبئة — prefer POS multi-price UoM lines
+        pack_uom, line_price, line_barcode = self._pick_best_pos_multi_price(product)
+
         package_qty = 0.0
         package_price = 0.0
         package_name = False
+        package_barcode = line_barcode or False
+        pack_source = None
+
         if pack_uom:
             package_qty = self._ratio_to_base(pack_uom, base_uom)
             package_price = currency.round(line_price)
             package_name = pack_uom.display_name
-        else:
-            # Fallback: first 'bigger' UoM × unit price
-            bigger = self.env["uom.uom"].sudo().search(
-                [("category_id", "=", base_cat.id), ("uom_type", "=", "bigger")],
-                order="factor ASC",
-                limit=1,
-            )
-            if bigger:
-                package_qty = self._ratio_to_base(bigger, base_uom)
-                package_price = currency.round(unit_price * package_qty)
-                package_name = bigger.display_name
+            pack_source = "pos_multi_price_uom_barcode"
+
+        # NOTE: if you WANT a fallback to "first bigger UoM × unit price",
+        # uncomment the block below. You asked to fetch ONLY from that module,
+        # so we keep it strict; no fallback means تعبئة will stay empty when
+        # there is no UOM PRICE line.
+        #
+        # else:
+        #     bigger = self.env["uom.uom"].sudo().search(
+        #         [("category_id", "=", base_cat.id), ("uom_type", "=", "bigger")],
+        #         order="factor ASC", limit=1
+        #     )
+        #     if bigger:
+        #         package_qty = self._ratio_to_base(bigger, base_uom)
+        #         package_price = currency.round(unit_price * package_qty)
+        #         package_name = bigger.display_name
+        #         pack_source = "fallback_bigger_uom"
 
         return {
             # identity
@@ -240,10 +291,12 @@ class ProductTemplate(models.Model):
             "uom_id": base_uom.id,
             "uom_name": base_uom.display_name,
             "uom_category_id": base_cat.id,
-            # التعبئة
+            # التعبئة (only when UOM PRICE line exists)
             "package_qty": package_qty,
             "package_price": package_price,
             "package_name": package_name,
+            "package_barcode": package_barcode,
+            "pack_source": pack_source,
             # currency
             "currency_id": currency.id,
             "currency_symbol": currency.symbol,
