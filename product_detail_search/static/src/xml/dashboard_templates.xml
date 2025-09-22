@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
-  <!-- ===== Dashboard wrapper ===== -->
+  <!-- Dashboard wrapper -->
   <t t-name="product_detail_search.Dashboard">
     <div class="pds o_form_view">
       <div class="pds__search">
-        <form t-on-submit.prevent="onSearch" class="pds__searchForm">
-          <input t-model="state.query"
-                 class="pds__input"
-                 placeholder="امسح الباركود | Scan or type barcode"/>
-          <button type="submit" class="btn btn-primary pds__btn">بحث</button>
+        <form class="pds__searchForm" t-on-submit.prevent="onKeyDown">
+          <!-- IMPORTANT: bindings for auto-scan + autofocus -->
+          <input class="pds__input scan-input"
+                 t-ref="scanInput"
+                 t-att-value="state.barcode"
+                 t-on-input="onInput"
+                 t-on-keydown="onKeyDown"
+                 placeholder="امسح أو اكتب الباركود"/>
         </form>
-        <div class="pds__barcodeDot" aria-hidden="true"/>
       </div>
 
       <t t-if="state.details">
@@ -24,15 +26,11 @@
             <div class="pdsCard__sub"><t t-esc="details._unit_sub"/></div>
           </div>
 
-          <!-- عبوة -->
+          <!-- التعبئة -->
           <div class="pdsCard pdsCard--orange">
-            <div class="pdsCard__title">عبوة</div>
-            <div class="pdsCard__value">
-              <t t-esc="details.package_price or 0"/>
-            </div>
-            <div class="pdsCard__sub">
-              <t t-esc="details._pack_sub or ''"/>
-            </div>
+            <div class="pdsCard__title">التعبئة</div>
+            <div class="pdsCard__value"><t t-esc="details.package_price or 0"/></div>
+            <div class="pdsCard__sub"><t t-esc="details._pack_sub or ''"/></div>
           </div>
         </div>
       </t>
