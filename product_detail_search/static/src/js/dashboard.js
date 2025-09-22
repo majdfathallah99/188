@@ -4,128 +4,145 @@ import { registry } from "@web/core/registry";
 import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
-/* ---- Kiosk behavior ---- */
-const KIOSK = {
-    autoFocus: true,            // keep caret in the field
-    selectOnFocus: false,
-    submitOnEnter: false,       // Enter not required anymore
-    clearInputOnSuccess: true,  // <-- clear ONLY the barcode field after a hit
-    clearAfterMs: 0,            // <-- NEVER clear the result tiles automatically
-    beepOnSuccess: true,
-};
-
-/* ---- Auto-search (fires as you scan/type) ---- */
-const AUTO = {
-    enabled: true,
-    debounceMs: 60,             // tiny wait to group bursty barcode keystrokes
-    minLength: 1,               // start searching as soon as there’s any input
-};
-
-function beep(ms = 120, freq = 880) {
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        setTimeout(() => { osc.stop(); ctx.close(); }, ms);
-    } catch { /* ignore */ }
-}
+/* ---------- Scanner behavior (lifted from the working module) ---------- */
+const SCAN_DEBOUNCE_MS = 220;  // wait this long after the last keystroke
+const SCAN_MIN_LEN     = 2;    // ignore too-short noise
 
 export class ProductDetailDashboard extends Component {
     static template = "product_detail_search.Dashboard";
 
+    // scanner state / timers
+    _timer = null;
+    _mounted = false;
+    _onGlobalKeydown = null;
+    _silenceInput = false; // prevents our own clears from re-triggering search
+
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.state = useState({ loading: false, details: null, query: "" });
-
-        this._debTimer   = null;
-        this._fetching   = false;
-        this._clearTimer = null;
-        this._silenceInput = false; // don’t re-trigger search when we clear programmatically
-
-        onMounted(() => {
-            const focus = (select = KIOSK.selectOnFocus) => {
-                const el = this.el?.querySelector?.(".pds__input");
-                if (!el) return;
-                el.focus();
-                if (select) {
-                    try { el.setSelectionRange(0, el.value.length, "forward"); } catch {}
-                }
-            };
-            this._focusInput = focus;
-            if (KIOSK.autoFocus) focus();
-
-            // Auto-search
-            this._onInput = () => {
-                if (this._silenceInput) return;
-                const v = (this.state.query || "").trim();
-                clearTimeout(this._debTimer);
-                if (AUTO.enabled && v.length >= AUTO.minLength) {
-                    this._debTimer = setTimeout(() => this._autoSearch(v), AUTO.debounceMs);
-                }
-            };
-            this._onPaste = () => this._onInput();
-
-            this._inputEl = this.el?.querySelector?.(".pds__input");
-            this._inputEl?.addEventListener?.("input", this._onInput);
-            this._inputEl?.addEventListener?.("paste", this._onPaste);
-
-            // Optional: keep Enter support (not required)
-            this._keydown = (ev) => {
-                if (KIOSK.submitOnEnter && ev.key === "Enter") {
-                    ev.preventDefault();
-                    this.onSearch(ev);
-                }
-            };
-            window.addEventListener("keydown", this._keydown);
-        });
-
-        onWillUnmount(() => {
-            window.removeEventListener("keydown", this._keydown || (()=>{}));
-            this._inputEl?.removeEventListener?.("input", this._onInput || (()=>{}));
-            this._inputEl?.removeEventListener?.("paste", this._onPaste || (()=>{}));
-            clearTimeout(this._debTimer);
-            clearTimeout(this._clearTimer);
-        });
+        // barcode: the live buffer; details: current product payload
+        this.state = useState({ loading: false, barcode: "", details: null });
     }
 
-    async _autoSearch(value) {
-        // ignore if the user kept typing since the debounce started
-        if ((this.state.query || "").trim() !== value.trim()) return;
-        await this._fetchAndRender(value);
+    /* ---------------- lifecycle: autofocus + global scanner capture ---------------- */
+    onMountedCallback() {
+        this._mounted = true;
+
+        // Aggressive autofocus so you can scan immediately after opening the action
+        this._focus();
+        setTimeout(() => this._focus(), 0);
+        setTimeout(() => this._focus(), 120);
+        requestAnimationFrame(() => this._focus());
+
+        // Capture barcode streams even if the input isn’t focused
+        this._onGlobalKeydown = (ev) => this._handleGlobalKeydown(ev);
+        document.addEventListener("keydown", this._onGlobalKeydown, { capture: true });
     }
 
-    async onSearch(ev) {
-        ev?.preventDefault?.();
-        const scan = (this.state.query || "").trim();
-        if (!scan) return;
-        await this._fetchAndRender(scan);
+    onWillUnmountCallback() {
+        this._mounted = false;
+        document.removeEventListener("keydown", this._onGlobalKeydown, { capture: true });
+        clearTimeout(this._timer);
     }
 
+    // Owl hooks
+    setupLifecycleOnce = (() => {
+        onMounted(() => this.onMountedCallback());
+        onWillUnmount(() => this.onWillUnmountCallback());
+        return true;
+    })();
+
+    /* ---------------- DOM helpers & input handlers ---------------- */
+    _focus() {
+        // Prefer a ref set in XML; fallback to common selectors
+        const el = this.refs?.scanInput
+            || this.el?.querySelector?.(".pds__input, .scan-input, input[type='text']");
+        if (!el) return;
+        try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
+    }
+
+    // If your input is focused and user types/pastes there
+    onInput(ev) {
+        if (this._silenceInput) return;
+        this.state.barcode = (ev.target.value || "").trim();
+        this._scheduleLookup();
+    }
+
+    onKeyDown(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this._fireLookup();
+        }
+    }
+
+    /* ---------------- Global scanner buffer (works without focusing the field) ---------------- */
+    _handleGlobalKeydown(ev) {
+        if (!this._mounted) return;
+
+        // Ignore when user is typing in another real input/textarea/contentEditable
+        const t = ev.target;
+        const inTypingField =
+            (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) || t?.isContentEditable;
+        if (inTypingField || ev.ctrlKey || ev.altKey || ev.metaKey) return;
+
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this._fireLookup();
+            return;
+        }
+        if (ev.key === "Backspace") {
+            this.state.barcode = (this.state.barcode || "").slice(0, -1);
+            return;
+        }
+        if (ev.key && ev.key.length === 1) {
+            this.state.barcode = (this.state.barcode || "") + ev.key;
+            this._scheduleLookup();
+        }
+    }
+
+    _scheduleLookup() {
+        clearTimeout(this._timer);
+        const term = (this.state.barcode || "").trim();
+        if (term.length < SCAN_MIN_LEN) return;
+        this._timer = setTimeout(() => this._fireLookup(), SCAN_DEBOUNCE_MS);
+    }
+
+    async _fireLookup() {
+        clearTimeout(this._timer);
+        const term = (this.state.barcode || "").trim();
+        if (!term || term.length < SCAN_MIN_LEN) return;
+
+        // Clear ONLY the input for the next scan; keep the tiles visible
+        this._silenceInput = true;
+        this.state.barcode = "";
+        setTimeout(() => { this._silenceInput = false; }, 0);
+
+        await this._fetchAndRender(term);
+        this._focus(); // stay hands-free for the next scan
+    }
+
+    /* ---------------- Your existing fetch flow (kept intact) ---------------- */
     async _fetchAndRender(scan) {
-        if (this._fetching) return; // prevent overlapping calls on fast scans
-        this._fetching = true;
         this.state.loading = true;
-
         try {
-            // 1) main RPC
+            // 1) Fetch main details
             let details = await this.orm.call("product.template", "product_detail_search", [scan]);
             if (!details || typeof details !== "object") {
                 this.notification.add("لم يتم العثور على المنتج.", { type: "warning" });
                 return;
             }
 
-            // 2) enrich تعبئة if server didn’t provide it
+            // 2) Enrich تعبئة from UoM Price lines if missing
             try {
                 if (!(details.package_qty && details.package_price)) {
                     const pid = details.product_id || null;
                     const ptid = details.product_tmpl_id || null;
-                    const payload = await this.orm.call("product.template", "uom_pack_from_lines", [pid, ptid], {});
+                    const payload = await this.orm.call(
+                        "product.template",
+                        "uom_pack_from_lines",
+                        [pid, ptid],
+                        {}
+                    );
                     if (payload?.has_pack) {
                         details.package_qty  = payload.package_qty;
                         details.package_price = payload.package_price;
@@ -133,35 +150,25 @@ export class ProductDetailDashboard extends Component {
                     }
                 }
             } catch (e) {
-                console.warn("[price-checker] pack enrich failed:", e);
+                console.warn("[product_detail_search] pack enrich failed:", e);
             }
 
-            // 3) subtitles for UI
+            // 3) Prettify subtitles (same as before)
             details._unit_sub = `${details.currency_symbol || ""} – ${details.uom_name || ""}`;
             details._pack_sub = details.package_qty ? `${details.uom_name || ""} ${details.package_qty} ×` : "";
 
-            // 4) render the tiles (and keep them on screen)
-            this.state.details = details;
-            if (KIOSK.beepOnSuccess) beep();
-
-            // 5) clear ONLY the input so next scan is immediate
-            if (KIOSK.clearInputOnSuccess) {
-                this._silenceInput = true;
-                this.state.query = "";
-                // allow the input event loop to settle, then accept events again
-                setTimeout(() => { this._silenceInput = false; }, 0);
-            }
-            if (KIOSK.autoFocus) this._focusInput?.();
+            this.state.details = details; // render two cards
         } catch (err) {
             console.error(err);
             this.notification.add("تعذر جلب البيانات. تحقق من الاتصال أو الصلاحيات.", { type: "danger" });
         } finally {
             this.state.loading = false;
-            this._fetching = false;
         }
     }
 }
 
+// Register under your action tag(s)
 registry.category("actions").add("product_detail_search_barcode_main_menu", ProductDetailDashboard);
 registry.category("actions").add("product_detail_search.dashboard", ProductDetailDashboard);
+
 export default ProductDetailDashboard;
