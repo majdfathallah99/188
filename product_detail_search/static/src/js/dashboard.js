@@ -4,70 +4,65 @@ import { registry } from "@web/core/registry";
 import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
-/* ---------- Scanner behavior (lifted from the working module) ---------- */
-const SCAN_DEBOUNCE_MS = 220;  // wait this long after the last keystroke
-const SCAN_MIN_LEN     = 2;    // ignore too-short noise
+/* -------- Scanner behavior -------- */
+const SCAN_DEBOUNCE_MS = 220;  // quiet time after last char before firing
+const SCAN_MIN_LEN     = 2;    // ignore short noise
 
 export class ProductDetailDashboard extends Component {
     static template = "product_detail_search.Dashboard";
 
-    // scanner state / timers
+    // timers / flags
     _timer = null;
+    _fetching = false;
     _mounted = false;
     _onGlobalKeydown = null;
-    _silenceInput = false; // prevents our own clears from re-triggering search
+    _silenceInput = false; // don't retrigger search when we clear the field programmatically
 
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        // barcode: the live buffer; details: current product payload
         this.state = useState({ loading: false, barcode: "", details: null });
+
+        // Bind hooks once
+        onMounted(() => this._onMountedCb());
+        onWillUnmount(() => this._onWillUnmountCb());
     }
 
-    /* ---------------- lifecycle: autofocus + global scanner capture ---------------- */
-    onMountedCallback() {
+    /* ---------- lifecycle: autofocus + global keyboard capture ---------- */
+    _onMountedCb() {
         this._mounted = true;
 
-        // Aggressive autofocus so you can scan immediately after opening the action
+        // Aggressive autofocus so scanning works immediately
         this._focus();
         setTimeout(() => this._focus(), 0);
         setTimeout(() => this._focus(), 120);
         requestAnimationFrame(() => this._focus());
 
-        // Capture barcode streams even if the input isn’t focused
+        // Capture barcode stream even if input loses focus
         this._onGlobalKeydown = (ev) => this._handleGlobalKeydown(ev);
         document.addEventListener("keydown", this._onGlobalKeydown, { capture: true });
     }
-
-    onWillUnmountCallback() {
+    _onWillUnmountCb() {
         this._mounted = false;
         document.removeEventListener("keydown", this._onGlobalKeydown, { capture: true });
         clearTimeout(this._timer);
     }
 
-    // Owl hooks
-    setupLifecycleOnce = (() => {
-        onMounted(() => this.onMountedCallback());
-        onWillUnmount(() => this.onWillUnmountCallback());
-        return true;
-    })();
-
     /* ---------------- DOM helpers & input handlers ---------------- */
     _focus() {
-        // Prefer a ref set in XML; fallback to common selectors
         const el = this.refs?.scanInput
             || this.el?.querySelector?.(".pds__input, .scan-input, input[type='text']");
         if (!el) return;
-        try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
+        try { el.focus({ preventScroll: true }); } catch {}
     }
 
-    // If your input is focused and user types/pastes there
+    // Fired when the scan input itself changes (typing or scanner in-field)
     onInput(ev) {
         if (this._silenceInput) return;
         this.state.barcode = (ev.target.value || "").trim();
         this._scheduleLookup();
     }
-
+    // Optional: keep manual Enter working
     onKeyDown(ev) {
         if (ev.key === "Enter") {
             ev.preventDefault();
@@ -75,15 +70,15 @@ export class ProductDetailDashboard extends Component {
         }
     }
 
-    /* ---------------- Global scanner buffer (works without focusing the field) ---------------- */
+    /* ---------------- Global scanner buffer ---------------- */
     _handleGlobalKeydown(ev) {
         if (!this._mounted) return;
 
-        // Ignore when user is typing in another real input/textarea/contentEditable
+        // Ignore real typing fields and modified keys
         const t = ev.target;
-        const inTypingField =
+        const typing =
             (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) || t?.isContentEditable;
-        if (inTypingField || ev.ctrlKey || ev.altKey || ev.metaKey) return;
+        if (typing || ev.ctrlKey || ev.altKey || ev.metaKey) return;
 
         if (ev.key === "Enter") {
             ev.preventDefault();
@@ -112,27 +107,29 @@ export class ProductDetailDashboard extends Component {
         const term = (this.state.barcode || "").trim();
         if (!term || term.length < SCAN_MIN_LEN) return;
 
-        // Clear ONLY the input for the next scan; keep the tiles visible
+        // Clear ONLY the input so the next scan is clean; keep tiles visible
         this._silenceInput = true;
         this.state.barcode = "";
         setTimeout(() => { this._silenceInput = false; }, 0);
 
         await this._fetchAndRender(term);
-        this._focus(); // stay hands-free for the next scan
+        this._focus(); // hands-free for the next scan
     }
 
-    /* ---------------- Your existing fetch flow (kept intact) ---------------- */
+    /* ---------------- Fetch + enrich ---------------- */
     async _fetchAndRender(scan) {
+        if (this._fetching) return;
+        this._fetching = true;
         this.state.loading = true;
         try {
-            // 1) Fetch main details
+            // 1) main details
             let details = await this.orm.call("product.template", "product_detail_search", [scan]);
             if (!details || typeof details !== "object") {
                 this.notification.add("لم يتم العثور على المنتج.", { type: "warning" });
                 return;
             }
 
-            // 2) Enrich تعبئة from UoM Price lines if missing
+            // 2) تعبئة from UoM Price lines, if missing
             try {
                 if (!(details.package_qty && details.package_price)) {
                     const pid = details.product_id || null;
@@ -153,16 +150,22 @@ export class ProductDetailDashboard extends Component {
                 console.warn("[product_detail_search] pack enrich failed:", e);
             }
 
-            // 3) Prettify subtitles (same as before)
+            // 3) pretty subtitles + robust name for header
             details._unit_sub = `${details.currency_symbol || ""} – ${details.uom_name || ""}`;
             details._pack_sub = details.package_qty ? `${details.uom_name || ""} ${details.package_qty} ×` : "";
+            details._name =
+                details.product_display_name ||
+                details.display_name ||
+                details.name ||
+                "";
 
-            this.state.details = details; // render two cards
+            this.state.details = details; // render two cards + header
         } catch (err) {
             console.error(err);
             this.notification.add("تعذر جلب البيانات. تحقق من الاتصال أو الصلاحيات.", { type: "danger" });
         } finally {
             this.state.loading = false;
+            this._fetching = false;
         }
     }
 }
