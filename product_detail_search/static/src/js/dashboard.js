@@ -6,17 +6,19 @@ import { useService } from "@web/core/utils/hooks";
 
 /* ------- Kiosk behavior knobs ------- */
 const KIOSK = {
-    autoFocus: true,          // focus input on load and after clear
-    submitOnEnter: true,      // keep Enter support (most scanners send it)
-    clearAfterMs: 5000,       // clear result + input after N ms (0 = disabled)
-    beepOnSuccess: true,      // short beep when a product is displayed
+    autoFocus: true,            // focus input on load/clear
+    selectOnFocus: false,       // select input text when focusing (nice on touch screens)
+    submitOnEnter: true,        // Enter still works (many scanners send it)
+    clearInputOnSuccess: true,  // <-- NEW: empty the input after each successful fetch
+    clearAfterMs: 5000,         // clear the result tiles after N ms (0 = keep)
+    beepOnSuccess: true,        // short beep after showing a product
 };
 
 /* ------- Auto-search knobs ------- */
 const AUTO = {
-    enabled: true,            // fire search automatically from input changes
-    debounceMs: 180,          // wait this long after last keystroke
-    minLength: 3,             // don’t search for very short strings
+    enabled: true,              // fire search automatically as text streams in
+    debounceMs: 180,            // wait this long after last keystroke
+    minLength: 3,               // ignore very short strings
 };
 
 function beep(ms = 120, freq = 880) {
@@ -40,16 +42,28 @@ export class ProductDetailDashboard extends Component {
         this.orm = useService("orm");
         this.notification = useService("notification");
         this.state = useState({ loading: false, details: null, query: "" });
+
         this._debTimer = null;
         this._clearTimer = null;
         this._fetching = false;
+        this._silenceInput = false; // <-- NEW: prevents our own programmatic clears from re-triggering search
 
         onMounted(() => {
-            const focusInput = () => this.el?.querySelector?.(".pds__input")?.focus();
-            if (KIOSK.autoFocus) focusInput();
+            const focus = (select = KIOSK.selectOnFocus) => {
+                const el = this.el?.querySelector?.(".pds__input");
+                if (!el) return;
+                el.focus();
+                if (select) {
+                    // select all without scrolling caret into view
+                    try { el.setSelectionRange(0, el.value.length, "forward"); } catch {}
+                }
+            };
+            this._focusInput = focus;
+            if (KIOSK.autoFocus) focus();
 
-            // Auto-search wiring on the input element
+            // Auto-search wiring
             this._onInput = () => {
+                if (this._silenceInput) return; // ignore events caused by our own clears
                 const v = (this.state.query || "").trim();
                 clearTimeout(this._debTimer);
                 if (AUTO.enabled && v.length >= AUTO.minLength) {
@@ -62,7 +76,7 @@ export class ProductDetailDashboard extends Component {
             this._inputEl?.addEventListener?.("input", this._onInput);
             this._inputEl?.addEventListener?.("paste", this._onPaste);
 
-            // Optional: Enter key for scanners that send it
+            // Keep Enter support for scanners that append it
             this._keydown = (ev) => {
                 if (KIOSK.submitOnEnter && ev.key === "Enter") {
                     ev.preventDefault();
@@ -70,9 +84,6 @@ export class ProductDetailDashboard extends Component {
                 }
             };
             window.addEventListener("keydown", this._keydown);
-
-            // keep a handy method for later
-            this._focusInput = focusInput;
         });
 
         onWillUnmount(() => {
@@ -85,8 +96,7 @@ export class ProductDetailDashboard extends Component {
     }
 
     async _autoSearch(value) {
-        // If the user changed the field since the debounce started, don’t fire the old query
-        if ((this.state.query || "").trim() !== value.trim()) return;
+        if ((this.state.query || "").trim() !== value.trim()) return; // user kept typing
         await this._fetchAndRender(value);
     }
 
@@ -101,21 +111,20 @@ export class ProductDetailDashboard extends Component {
     }
 
     async _fetchAndRender(scan) {
-        if (this._fetching) return; // avoid overlapping requests on fast scans
+        if (this._fetching) return; // avoid overlapping requests
         this._fetching = true;
         this.state.loading = true;
-        this.state.details = null;
         clearTimeout(this._clearTimer);
 
         try {
-            // 1) main RPC
+            // 1) main RPC (unit card + identity)
             let details = await this.orm.call("product.template", "product_detail_search", [scan]);
             if (!details || typeof details !== "object") {
                 this.notification.add("لم يتم العثور على المنتج.", { type: "warning" });
                 return;
             }
 
-            // 2) enrich تعبئة from UoM Price lines (if the server didn’t include them)
+            // 2) enrich تعبئة from UoM Price lines (if missing)
             try {
                 if (!(details.package_qty && details.package_price)) {
                     const pid = details.product_id || null;
@@ -135,15 +144,28 @@ export class ProductDetailDashboard extends Component {
             details._unit_sub = `${details.currency_symbol || ""} – ${details.uom_name || ""}`;
             details._pack_sub = details.package_qty ? `${details.uom_name || ""} ${details.package_qty} ×` : "";
 
-            // 4) render + beep
+            // 4) render
             this.state.details = details;
             if (KIOSK.beepOnSuccess) beep();
 
-            // 5) auto-clear after a bit
+            // 5) NEW: clear input immediately for next scan (keep tiles on screen)
+            if (KIOSK.clearInputOnSuccess) {
+                this._silenceInput = true;
+                this.state.query = "";        // wipe the field
+                this._focusInput?.();         // keep focus for next scan
+                // allow input events again on next tick
+                setTimeout(() => { this._silenceInput = false; }, 0);
+            }
+
+            // 6) auto-clear tiles after a while (optional)
             if (KIOSK.clearAfterMs) {
                 this._clearTimer = setTimeout(() => {
                     this.state.details = null;
-                    this.state.query = "";
+                    if (!KIOSK.clearInputOnSuccess) {
+                        this._silenceInput = true;
+                        this.state.query = "";
+                        setTimeout(() => { this._silenceInput = false; }, 0);
+                    }
                     if (KIOSK.autoFocus) this._focusInput?.();
                 }, KIOSK.clearAfterMs);
             }
@@ -157,8 +179,6 @@ export class ProductDetailDashboard extends Component {
     }
 }
 
-// Register under your action tag(s)
 registry.category("actions").add("product_detail_search_barcode_main_menu", ProductDetailDashboard);
 registry.category("actions").add("product_detail_search.dashboard", ProductDetailDashboard);
-
 export default ProductDetailDashboard;
