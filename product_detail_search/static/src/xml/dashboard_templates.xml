@@ -18,6 +18,20 @@
 
       <t t-if="state.details">
         <t t-set="details" t-value="state.details"/>
+
+        <!-- Product name header -->
+        <t t-if="details._name">
+          <div class="pds__header">
+            <div class="pds__name" t-esc="details._name"/>
+            <div class="pds__meta">
+              <t t-if="details.barcode">
+                <span class="pds__metaLbl">Barcode:</span>
+                <span t-esc="details.barcode"/>
+              </t>
+            </div>
+          </div>
+        </t>
+
         <div class="pds__cards">
           <!-- قطعة -->
           <div class="pdsCard pdsCard--blue">
