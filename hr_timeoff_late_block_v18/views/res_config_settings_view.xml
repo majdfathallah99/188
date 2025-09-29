@@ -1,0 +1,33 @@
+<odoo>
+  <!-- HR Settings: show policy in Settings → Employees -->
+  <record id="res_config_settings_view_inherit_timeoff_policy" model="ir.ui.view">
+    <field name="name">res.config.settings.timeoff.policy.v18</field>
+    <field name="model">res.config.settings</field>
+    <field name="inherit_id" ref="hr.res_config_settings_view_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//div[hasclass('app_settings_block')][.//h2[contains(., 'Time Off') or contains(., 'Leaves')]]" position="inside">
+        <div class="row mt16 o_settings_container">
+          <div class="col-12 col-lg-6 o_setting_box">
+            <div class="o_setting_left_pane">
+              <span class="fa fa-calendar"/>
+            </div>
+            <div class="o_setting_right_pane">
+              <label for="restrict_late_timeoff_submission"/>
+              <div class="text-muted">
+                Block Time Off requests whose start date is more than N days in the past.
+              </div>
+              <div class="content-group">
+                <field name="restrict_late_timeoff_submission"/>
+                <div attrs="{'invisible': [('restrict_late_timeoff_submission','=',False)]}">
+                  <label for="late_timeoff_threshold_days"/>
+                  <field name="late_timeoff_threshold_days" class="oe_inline" nolabel="1"/>
+                  <span class="ms-2">days</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>
