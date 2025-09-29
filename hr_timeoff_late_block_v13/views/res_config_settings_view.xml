@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Employees → Configuration → Settings -->
+    <record id="res_config_settings_view_form_inherit_timeoff_lateblock" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.timeoff.lateblock</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="hr.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='hr']" position="inside">
+                <block name="timeoff_policy_block" title="Time Off Policy" groups="base.group_system,hr.group_hr_manager">
+                    <setting id="restrict_late_timeoff_submission_setting"
+                             string="Block late Time Off submissions"
+                             groups="base.group_system,hr.group_hr_manager">
+                        <field name="restrict_late_timeoff_submission" groups="base.group_system,hr.group_hr_manager"/>
+                        <div class="mt8" groups="base.group_system,hr.group_hr_manager">
+                            <label for="late_timeoff_threshold_days" string="Late threshold (days)"/>
+                            <field name="late_timeoff_threshold_days" class="oe_inline" groups="base.group_system,hr.group_hr_manager"/>
+                            <div class="text-muted">
+                                Requests with a start date older than this many days will be blocked.
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>
